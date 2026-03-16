@@ -45,13 +45,20 @@ void LoFiTrackerAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
 
     if (auto* ph = getPlayHead())
     {
-        juce::AudioPlayHead::CurrentPositionInfo info;
-        if (ph->getCurrentPosition (info))
+        if (auto pos = ph->getPosition())
         {
-            hostPlaying = info.isPlaying;
-            hostBpm     = info.bpm;
+            hostPlaying = pos->getIsPlaying();
+            if (auto bpm = pos->getBpm())
+                hostBpm = *bpm;
         }
     }
+
+    // ---- Detect play → stop transition and release all voices ----
+    const bool isNowPlaying = engine.isPlaying() || hostPlaying;
+    if (lastHostPlaying && !isNowPlaying)
+        for (auto& v : voices)
+            v.noteOff();
+    lastHostPlaying = isNowPlaying;
 
     // ---- Advance sequencer ----
     engine.advance (buffer.getNumSamples(), hostPlaying, hostBpm);
@@ -70,10 +77,15 @@ void LoFiTrackerAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
             const int  note = track.pendingNote.load();
             const auto vel  = track.pendingVel.load();
             track.hasPending.store (false);
+            track.pendingOff.store (false);  // superseded by note-on
 
-            // Trigger note-off on previous, then note-on
             voice.noteOff();
             voice.noteOn (note, (float) vel, track.params);
+        }
+        else if (track.pendingOff.load())
+        {
+            track.pendingOff.store (false);
+            voice.noteOff();
         }
 
         // Update any live param changes

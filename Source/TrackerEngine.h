@@ -58,10 +58,11 @@ struct TrackerTrack
     juce::String name;
     FMVoiceParams params;
 
-    // Pending note-on info for the audio thread
+    // Pending events for the audio thread
     std::atomic<int>     pendingNote  { 0 };    // 0 = none
     std::atomic<uint8_t> pendingVel   { 0 };
     std::atomic<bool>    hasPending   { false };
+    std::atomic<bool>    pendingOff   { false }; // empty step hit — stop voice
 
     TrackerTrack() = default;
 };
@@ -88,8 +89,13 @@ public:
     TrackerTrack& getTrack (int idx) { jassert(idx >= 0 && idx < kNumTracks); return tracks[idx]; }
     const TrackerTrack& getTrack (int idx) const { return tracks[idx]; }
 
-    // Returns the current playback step for each track (for UI cursor)
-    int getCurrentStep (int trackIdx) const { return tracks[trackIdx].curStep; }
+    // Returns the display-safe step position for track (written atomically
+    // after ALL tracks advance — UI reads this, never track.curStep directly)
+    int getDisplayStep (int trackIdx) const
+    {
+        jassert (trackIdx >= 0 && trackIdx < kNumTracks);
+        return displaySteps[trackIdx].load (std::memory_order_relaxed);
+    }
 
     // State serialisation
     juce::ValueTree toValueTree() const;
@@ -97,6 +103,9 @@ public:
 
 private:
     TrackerTrack tracks[kNumTracks];
+
+    // Snapshot written by audio thread after ALL tracks advance; read by UI
+    std::atomic<int> displaySteps[kNumTracks] {};
 
     std::atomic<bool>   playing        { false };
     std::atomic<double> bpm            { 120.0 };

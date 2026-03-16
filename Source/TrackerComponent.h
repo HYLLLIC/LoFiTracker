@@ -21,6 +21,8 @@ public:
     bool keyPressed      (const juce::KeyPress& key) override;
     bool keyStateChanged (bool isKeyDown) override;
     void mouseDown       (const juce::MouseEvent& e) override;
+    void mouseWheelMove  (const juce::MouseEvent& e,
+                          const juce::MouseWheelDetails& wheel) override;
 
     void timerCallback() override;   // repaint playhead
 
@@ -28,16 +30,20 @@ public:
     int getSelectedTrack() const { return selectedTrack; }
     int getSelectedStep()  const { return selectedStep;  }
 
-    // Callback set by editor when user changes a step-count spinner
+    // Callbacks set by editor
     std::function<void(int trackIdx, int newCount)> onStepCountChanged;
+    std::function<void()> onTogglePlay;   // spacebar
 
 private:
     TrackerEngine& engine;
 
     //-- cursor state
-    int selectedTrack { 0 };
-    int selectedStep  { 0 };
-    int currentOctave { 4 };
+    int  selectedTrack { 0 };
+    int  selectedStep  { 0 };
+    int  currentOctave { 4 };
+    bool noteEditMode  { false };  // popup note-edit overlay active
+
+    void drawNoteEditPopup (juce::Graphics& g);
 
     //-- layout geometry (computed in resized())
     int headerH      { 46 };   // track header height

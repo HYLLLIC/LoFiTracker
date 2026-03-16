@@ -71,6 +71,11 @@ void TrackerEngine::advance (int numSamples, bool hostIsPlaying, double hostBpm)
             track.curStep = (track.curStep + 1) % juce::jmax (1, track.stepCount);
             fireStep (t);
         }
+
+        // Write display snapshot AFTER all tracks have moved so the UI
+        // always sees every column at the same logical step boundary
+        for (int t = 0; t < kNumTracks; ++t)
+            displaySteps[t].store (tracks[t].curStep, std::memory_order_relaxed);
     }
 }
 
@@ -88,6 +93,10 @@ void TrackerEngine::fireStep (int trackIdx)
         track.pendingNote.store  (step.note);
         track.pendingVel.store   (step.vel);
         track.hasPending.store   (true);
+    }
+    else
+    {
+        track.pendingOff.store (true);
     }
 }
 

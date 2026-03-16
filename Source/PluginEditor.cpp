@@ -18,6 +18,14 @@ LoFiTrackerAudioProcessorEditor::LoFiTrackerAudioProcessorEditor (LoFiTrackerAud
     // When selected track changes in the grid, update the params panel
     tracker.onStepCountChanged = [this] (int, int) { repaint(); };
 
+    tracker.onTogglePlay = [this]
+    {
+        const bool nowPlaying = !processor.getEngine().isPlaying();
+        processor.setInternalPlaying (nowPlaying);
+        if (!nowPlaying)
+            processor.getEngine().reset();
+    };
+
     startTimerHz (20);
 
     updateParamsPanel();

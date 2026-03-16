@@ -154,7 +154,6 @@ void VoiceParamsPanel::resized()
     // Layout: section labels + 14 sliders across the width
     const int w          = getWidth();
     const int h          = getHeight();
-    const int sliderH    = h - 20;  // leave room for label at top
     const int lblH       = 14;
     const int totalSliders = 14;
     const int slW        = juce::jmax (24, (w - 4) / totalSliders);

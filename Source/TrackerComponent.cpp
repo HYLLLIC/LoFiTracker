@@ -84,6 +84,12 @@ void TrackerComponent::paint (juce::Graphics& g)
 
     const int totalW = getWidth();
 
+    // Snapshot all display steps once before drawing so every column
+    // reflects the same logical step boundary (no inter-column stagger)
+    int playStep[kNumTracks];
+    for (int t = 0; t < kNumTracks; ++t)
+        playStep[t] = engine.getDisplayStep (t);
+
     // ---- Draw track columns ----
     for (int t = 0; t < kNumTracks; ++t)
     {
@@ -128,7 +134,7 @@ void TrackerComponent::paint (juce::Graphics& g)
             if (cell.isEmpty()) continue;
 
             const bool inPattern = (row < maxRow);
-            const bool isPlay    = inPattern && (row == track.curStep) && engine.isPlaying();
+            const bool isPlay    = inPattern && (row == playStep[t]) && engine.isPlaying();
             const bool isCursor  = (t == selectedTrack && row == selectedStep);
 
             // Background
@@ -198,6 +204,9 @@ void TrackerComponent::paint (juce::Graphics& g)
     // Header bottom line
     g.setColour (colAccent.withAlpha (0.4f));
     g.drawHorizontalLine (headerH - 1, 0.0f, (float) totalW);
+
+    if (noteEditMode)
+        drawNoteEditPopup (g);
 }
 
 //==============================================================================
@@ -217,13 +226,18 @@ void TrackerComponent::mouseDown (const juce::MouseEvent& e)
 
         if (clickY < headerH)
         {
+            noteEditMode = false;
             handleHeaderClick (t, { clickX - x, clickY });
         }
         else
         {
             const int row = (clickY - headerH) / rowH + scrollOffset;
             if (row >= 0 && row < kMaxSteps)
+            {
                 selectedStep = row;
+                const auto& step = engine.getTrack (t).steps[row];
+                noteEditMode = (step.note > 0);
+            }
         }
         repaint();
         break;
@@ -259,6 +273,80 @@ void TrackerComponent::handleHeaderClick (int trackIdx, const juce::Point<int>& 
 }
 
 //==============================================================================
+void TrackerComponent::mouseWheelMove (const juce::MouseEvent&,
+                                        const juce::MouseWheelDetails& wheel)
+{
+    if (!noteEditMode) return;
+
+    auto& step = engine.getTrack (selectedTrack).steps[selectedStep];
+    if (step.note <= 0) return;
+
+    // Each wheel tick nudges velocity by ±4; shift for fine ±1
+    const int delta = (wheel.deltaY > 0.0f) ? 4 : -4;
+    step.vel = (uint8_t) juce::jlimit (1, 127, (int) step.vel + delta);
+    repaint();
+}
+
+//==============================================================================
+void TrackerComponent::drawNoteEditPopup (juce::Graphics& g)
+{
+    const auto& step = engine.getTrack (selectedTrack).steps[selectedStep];
+    if (step.note <= 0) { noteEditMode = false; return; }
+
+    // Popup dimensions
+    constexpr int pw = 148, ph = 54;
+
+    // Anchor near the selected cell, clamped to component bounds
+    const juce::Rectangle<int> anchor = cellRect (selectedTrack, selectedStep);
+    int px = anchor.getRight() + 4;
+    int py = anchor.getY() - 4;
+    if (px + pw > getWidth())  px = anchor.getX() - pw - 4;
+    if (py + ph > getHeight()) py = getHeight() - ph - 4;
+    py = juce::jmax (headerH + 2, py);
+
+    const juce::Rectangle<int> popup (px, py, pw, ph);
+
+    // Background
+    g.setColour (juce::Colour (0xee1a2a1e));
+    g.fillRoundedRectangle (popup.toFloat(), 4.0f);
+    g.setColour (colAccent.withAlpha (0.8f));
+    g.drawRoundedRectangle (popup.toFloat(), 4.0f, 1.0f);
+
+    const juce::Font mono ("Courier New", 12.0f, juce::Font::bold);
+    g.setFont (mono);
+
+    // Row 1: note name + semitone hint
+    g.setColour (colAccent);
+    g.drawText (noteToString (step.note),
+                popup.getX() + 8, popup.getY() + 6, 48, 16,
+                juce::Justification::centredLeft, false);
+    g.setColour (colDimText);
+    g.setFont (juce::Font ("Courier New", 10.0f, juce::Font::plain));
+    g.drawText ("\xe2\x97\x84 \xe2\x96\xba semitone  \xe2\x86\x91\xe2\x86\x93 octave",
+                popup.getX() + 56, popup.getY() + 8, pw - 64, 12,
+                juce::Justification::centredLeft, false);
+
+    // Row 2: velocity bar + value
+    const float velFrac = step.vel / 127.0f;
+    const int barX = popup.getX() + 8;
+    const int barY = popup.getY() + 28;
+    const int barW = pw - 16;
+    const int barH = 10;
+
+    g.setColour (juce::Colour (0xff2a2a2a));
+    g.fillRoundedRectangle ((float)barX, (float)barY, (float)barW, (float)barH, 3.0f);
+    g.setColour (colAccent.withAlpha (0.7f));
+    g.fillRoundedRectangle ((float)barX, (float)barY,
+                             barW * velFrac, (float)barH, 3.0f);
+
+    g.setColour (colText);
+    g.setFont (juce::Font ("Courier New", 10.0f, juce::Font::plain));
+    g.drawText ("vel " + velToString (step.vel) + "  \xe2\x86\x95 scroll",
+                popup.getX() + 8, popup.getY() + 40, pw - 16, 11,
+                juce::Justification::centredLeft, false);
+}
+
+//==============================================================================
 int TrackerComponent::keyToNote (int keyCode) const
 {
     const int lower = juce::CharacterFunctions::toLowerCase ((juce::juce_wchar) keyCode);
@@ -291,6 +379,7 @@ void TrackerComponent::clearStep()
 
 void TrackerComponent::moveCursor (int dTrack, int dStep)
 {
+    noteEditMode  = false;
     selectedTrack = juce::jlimit (0, kNumTracks - 1, selectedTrack + dTrack);
     selectedStep  = juce::jlimit (0, kMaxSteps  - 1, selectedStep  + dStep);
     ensureCursorVisible();
@@ -323,7 +412,37 @@ bool TrackerComponent::keyPressed (const juce::KeyPress& key)
         return true;
     }
 
-    // Navigation
+    // Note-edit popup mode: arrows edit the note, Escape exits
+    if (noteEditMode)
+    {
+        auto& step = engine.getTrack (selectedTrack).steps[selectedStep];
+        if (step.note > 0)
+        {
+            if (kc == juce::KeyPress::leftKey)
+            {
+                step.note = (int8_t) juce::jlimit (1, 127, (int) step.note - 1);
+                repaint(); return true;
+            }
+            if (kc == juce::KeyPress::rightKey)
+            {
+                step.note = (int8_t) juce::jlimit (1, 127, (int) step.note + 1);
+                repaint(); return true;
+            }
+            if (kc == juce::KeyPress::downKey)
+            {
+                step.note = (int8_t) juce::jlimit (1, 127, (int) step.note - 12);
+                repaint(); return true;
+            }
+            if (kc == juce::KeyPress::upKey)
+            {
+                step.note = (int8_t) juce::jlimit (1, 127, (int) step.note + 12);
+                repaint(); return true;
+            }
+        }
+        if (kc == juce::KeyPress::escapeKey) { noteEditMode = false; repaint(); return true; }
+    }
+
+    // Navigation (only when not in note-edit mode)
     if (kc == juce::KeyPress::upKey)    { moveCursor (0, -1); return true; }
     if (kc == juce::KeyPress::downKey)  { moveCursor (0,  1); return true; }
     if (kc == juce::KeyPress::leftKey)  { moveCursor (-1, 0); return true; }
@@ -339,6 +458,13 @@ bool TrackerComponent::keyPressed (const juce::KeyPress& key)
     // Page up/down for scrolling
     if (kc == juce::KeyPress::pageUpKey)   { moveCursor (0, -visibleRows); return true; }
     if (kc == juce::KeyPress::pageDownKey) { moveCursor (0,  visibleRows); return true; }
+
+    // Spacebar: toggle play/stop
+    if (kc == juce::KeyPress::spaceKey)
+    {
+        if (onTogglePlay) onTogglePlay();
+        return true;
+    }
 
     return false;
 }
