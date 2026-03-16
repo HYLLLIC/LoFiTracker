@@ -9,6 +9,7 @@ LoFiTrackerAudioProcessorEditor::LoFiTrackerAudioProcessorEditor (LoFiTrackerAud
     setSize (kTotalW, kTotalH);
     setResizable (true, false);
     setResizeLimits (500, 400, 1400, 900);
+    setWantsKeyboardFocus (true);
 
     setupToolbar();
 
@@ -52,6 +53,7 @@ void LoFiTrackerAudioProcessorEditor::setupToolbar()
     btnPlay.onClick = [this]
     {
         processor.setInternalPlaying (true);
+        tracker.grabKeyboardFocus();
     };
 
     // Stop button
@@ -62,6 +64,7 @@ void LoFiTrackerAudioProcessorEditor::setupToolbar()
     {
         processor.setInternalPlaying (false);
         processor.getEngine().reset();
+        tracker.grabKeyboardFocus();
     };
 
     // BPM slider
@@ -84,6 +87,21 @@ void LoFiTrackerAudioProcessorEditor::setupToolbar()
     lblBpm.setText ("BPM", juce::dontSendNotification);
     lblBpm.setFont (juce::Font ("Courier New", 11.0f, juce::Font::plain));
     lblBpm.setColour (juce::Label::textColourId, juce::Colour (0xff888888));
+}
+
+//==============================================================================
+bool LoFiTrackerAudioProcessorEditor::keyPressed (const juce::KeyPress& key)
+{
+    // Catch spacebar at the editor level so it works regardless of focus
+    if (key.getKeyCode() == juce::KeyPress::spaceKey)
+    {
+        const bool nowPlaying = !processor.getEngine().isPlaying();
+        processor.setInternalPlaying (nowPlaying);
+        if (!nowPlaying)
+            processor.getEngine().reset();
+        return true;
+    }
+    return false;
 }
 
 //==============================================================================

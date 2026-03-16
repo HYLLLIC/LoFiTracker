@@ -12,41 +12,37 @@ VoiceParamsPanel::VoiceParamsPanel()
         l.setJustificationType (juce::Justification::centred);
     };
 
-    auto addSl = [&] (juce::Slider& s, juce::Label& l, const juce::String& name,
-                      double lo, double hi, double def, bool isInt = false)
-    {
-        buildSlider (s, l, name, lo, hi, def, isInt);
-    };
-
     // Section labels
+    addLbl (lblFMSection,      "--- FM ---");
+    lblFMSection.setColour      (juce::Label::textColourId, colAccent);
     addLbl (lblCarrierSection, "--- CARRIER ---");
     lblCarrierSection.setColour (juce::Label::textColourId, colAccent);
-    addLbl (lblModSection, "--- MODULATOR ---");
-    lblModSection.setColour (juce::Label::textColourId, colAccent);
-    addLbl (lblLoFiSection, "--- LO-FI ---");
-    lblLoFiSection.setColour (juce::Label::textColourId, colAccent);
+    addLbl (lblModSection,     "--- MODULATOR ---");
+    lblModSection.setColour     (juce::Label::textColourId, colAccent);
+    addLbl (lblLoFiSection,    "--- LO-FI ---");
+    lblLoFiSection.setColour    (juce::Label::textColourId, colAccent);
 
-    // FM
-    addSl (slModRatio, lblModRatio, "Ratio",  0.125, 16.0, 2.0);
-    addSl (slModIndex, lblModIndex, "Index",  0.0,   20.0, 5.0);
+    // FM (no log skew needed)
+    buildSlider (slModRatio, lblModRatio, "Ratio",  0.125, 16.0, 2.0);
+    buildSlider (slModIndex, lblModIndex, "Index",  0.0,   20.0, 5.0);
 
-    // Carrier envelope
-    addSl (slCAtk, lblCAtk, "C.Atk", 0.001, 2.0,  0.001);
-    addSl (slCDcy, lblCDcy, "C.Dcy", 0.001, 4.0,  0.25);
-    addSl (slCSus, lblCSus, "C.Sus", 0.0,   1.0,  0.0);
-    addSl (slCRel, lblCRel, "C.Rel", 0.001, 2.0,  0.05);
+    // Carrier envelope — log scale for time params (midPoint = 0.05 s)
+    buildSlider (slCAtk, lblCAtk, "C.Atk", 0.001, 2.0,  0.001, false, 0.05);
+    buildSlider (slCDcy, lblCDcy, "C.Dcy", 0.001, 4.0,  0.25,  false, 0.05);
+    buildSlider (slCSus, lblCSus, "C.Sus", 0.0,   1.0,  0.0);
+    buildSlider (slCRel, lblCRel, "C.Rel", 0.001, 2.0,  0.05,  false, 0.05);
 
-    // Modulator envelope
-    addSl (slMAtk, lblMAtk, "M.Atk", 0.001, 2.0,  0.001);
-    addSl (slMDcy, lblMDcy, "M.Dcy", 0.001, 4.0,  0.12);
-    addSl (slMSus, lblMSus, "M.Sus", 0.0,   1.0,  0.0);
-    addSl (slMRel, lblMRel, "M.Rel", 0.001, 2.0,  0.05);
+    // Modulator envelope — log scale for time params
+    buildSlider (slMAtk, lblMAtk, "M.Atk", 0.001, 2.0,  0.001, false, 0.05);
+    buildSlider (slMDcy, lblMDcy, "M.Dcy", 0.001, 4.0,  0.12,  false, 0.05);
+    buildSlider (slMSus, lblMSus, "M.Sus", 0.0,   1.0,  0.0);
+    buildSlider (slMRel, lblMRel, "M.Rel", 0.001, 2.0,  0.05,  false, 0.05);
 
     // Lo-fi
-    addSl (slBitDepth, lblBitDepth, "Bits",   1.0, 16.0, 8.0, true);
-    addSl (slSrDiv,    lblSrDiv,    "SR÷",    1.0, 8.0,  1.0, true);
-    addSl (slFilterCut,lblFilterCut,"Filter", 0.0, 1.0,  0.5);
-    addSl (slVolume,   lblVolume,   "Volume", 0.0, 1.0,  0.8);
+    buildSlider (slBitDepth,  lblBitDepth,  "Bits",   1.0, 16.0, 8.0, true);
+    buildSlider (slSrDiv,     lblSrDiv,     "SR÷",    1.0, 8.0,  1.0, true);
+    buildSlider (slFilterCut, lblFilterCut, "Filter", 0.0, 1.0,  0.5);
+    buildSlider (slVolume,    lblVolume,    "Volume", 0.0, 1.0,  0.8);
 
     // Filter type toggle
     addAndMakeVisible (btnFilterLP);
@@ -61,11 +57,14 @@ VoiceParamsPanel::~VoiceParamsPanel() {}
 //==============================================================================
 void VoiceParamsPanel::buildSlider (juce::Slider& s, juce::Label& l,
                                      const juce::String& name,
-                                     double lo, double hi, double def, bool isInt)
+                                     double lo, double hi, double def,
+                                     bool isInt, double midPoint)
 {
     addAndMakeVisible (s);
     s.setSliderStyle (juce::Slider::LinearBarVertical);
     s.setRange (lo, hi, isInt ? 1.0 : 0.0);
+    if (midPoint > 0.0)
+        s.setSkewFactorFromMidPoint (midPoint);
     s.setValue (def, juce::dontSendNotification);
     s.setTextBoxStyle (juce::Slider::TextBoxBelow, false, 40, 14);
     s.setColour (juce::Slider::trackColourId,         juce::Colour (0xff44cc66).withAlpha (0.6f));
@@ -151,54 +150,63 @@ void VoiceParamsPanel::paint (juce::Graphics& g)
 
 void VoiceParamsPanel::resized()
 {
-    // Layout: section labels + 14 sliders across the width
-    const int w          = getWidth();
-    const int h          = getHeight();
-    const int lblH       = 14;
-    const int totalSliders = 14;
-    const int slW        = juce::jmax (24, (w - 4) / totalSliders);
-
-    // Section header labels
+    const int w       = getWidth();
+    const int h       = getHeight();
+    const int lblH    = 14;
     const int secLblH = 12;
-    lblCarrierSection.setBounds (2,     2, 100, secLblH);
-    lblModSection.setBounds     (104,   2, 120, secLblH);
-    lblLoFiSection.setBounds    (226,   2, 100, secLblH);
+
+    // 14 sliders + 3 inter-section gaps of kGap px each
+    const int kGap    = 8;
+    const int slW     = juce::jmax (24, (w - 4 - 13 * 2 - 3 * kGap) / 14);
+
+    const int y  = secLblH + 4;
+    const int sH = h - y - lblH - 2;
 
     int x = 2;
-    const int y = secLblH + 2;
-    const int sH = h - y - lblH - 2;
 
     auto place = [&] (juce::Slider& s, juce::Label& l)
     {
-        l.setBounds  (x, h - lblH, slW, lblH);
-        s.setBounds  (x, y,        slW, sH);
+        l.setBounds (x, h - lblH, slW, lblH);
+        s.setBounds (x, y,        slW, sH);
         x += slW + 2;
     };
 
-    // FM
+    // FM section
+    const int xFM = x;
     place (slModRatio, lblModRatio);
     place (slModIndex, lblModIndex);
-    x += 4;  // gap between sections
+    x += kGap;
 
-    // Carrier env
+    // Carrier envelope section
+    const int xCarrier = x;
     place (slCAtk, lblCAtk);
     place (slCDcy, lblCDcy);
     place (slCSus, lblCSus);
     place (slCRel, lblCRel);
-    x += 4;
+    x += kGap;
 
-    // Mod env
+    // Modulator envelope section
+    const int xMod = x;
     place (slMAtk, lblMAtk);
     place (slMDcy, lblMDcy);
     place (slMSus, lblMSus);
     place (slMRel, lblMRel);
-    x += 4;
+    x += kGap;
 
-    // Lo-fi
+    // Lo-fi section
+    const int xLoFi = x;
     place (slBitDepth,  lblBitDepth);
     place (slSrDiv,     lblSrDiv);
     place (slFilterCut, lblFilterCut);
     place (slVolume,    lblVolume);
 
     btnFilterLP.setBounds (x + 2, y + sH / 2 - 8, 36, 16);
+
+    // Section labels — positioned from actual slider start x values
+    const int secW = slW * 2 + 2;   // width for 2-slider sections
+    const int env4W = slW * 4 + 6;  // width for 4-slider sections
+    lblFMSection.setBounds      (xFM,      2, secW,  secLblH);
+    lblCarrierSection.setBounds (xCarrier, 2, env4W, secLblH);
+    lblModSection.setBounds     (xMod,     2, env4W, secLblH);
+    lblLoFiSection.setBounds    (xLoFi,    2, env4W, secLblH);
 }

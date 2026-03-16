@@ -26,7 +26,7 @@ private:
     void buildSlider (juce::Slider& s, juce::Label& l,
                       const juce::String& name,
                       double min, double max, double defaultVal,
-                      bool isInt = false);
+                      bool isInt = false, double midPoint = 0.0);
 
     void syncToTrack();   // push track params → sliders
     void pushToTrack();   // pull slider values → track params
@@ -45,7 +45,7 @@ private:
     juce::Label  lblBitDepth, lblSrDiv;
     juce::Label  lblFilterCut, lblVolume;
 
-    juce::Label lblCarrierSection, lblModSection, lblLoFiSection;
+    juce::Label lblFMSection, lblCarrierSection, lblModSection, lblLoFiSection;
 
     bool ignoreCallbacks { false };
 
