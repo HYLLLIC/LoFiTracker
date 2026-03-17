@@ -106,7 +106,22 @@ void TrackerComponent::paint (juce::Graphics& g)
             // Track name
             g.setColour (track.muted ? colMuted : colAccent);
             g.setFont (juce::Font ("Courier New", 13.0f, juce::Font::bold));
-            g.drawText (track.name, x + 4, 2, colW - 8, 16, juce::Justification::centredLeft, false);
+            g.drawText (track.name, x + 4, 2, colW - 28, 16, juce::Justification::centredLeft, false);
+
+            // Mute button — top-right corner, same row as voice name
+            {
+                const juce::Rectangle<int> muteBtn (x + colW - 22, 2, 18, 16);
+                const juce::Colour muteActive (0xffCC3333);
+                g.setColour (track.muted
+                             ? muteActive.withAlpha (0.25f)
+                             : juce::Colour (0xff1a1a18).withAlpha (0.0f));
+                g.fillRect (muteBtn);
+                g.setColour (track.muted ? muteActive : colDimText.withAlpha (0.45f));
+                g.drawRect (muteBtn, 1);
+                g.setFont (juce::Font ("Courier New", 11.0f, juce::Font::bold));
+                g.setColour (track.muted ? muteActive : colDimText.withAlpha (0.45f));
+                g.drawText ("M", muteBtn, juce::Justification::centred, false);
+            }
 
             // Step count controls: "LEN: [<] 16 [>]"
             const int btnW = 14;
@@ -119,9 +134,6 @@ void TrackerComponent::paint (juce::Graphics& g)
             g.drawText (lenStr,     x + 48, midY, 20, 14, juce::Justification::centred, false);
             g.drawText ("[>]",      x + 68, midY, btnW, 14, juce::Justification::centred, false);
 
-            // Mute button
-            g.setColour (track.muted ? colMuted : colDimText);
-            g.drawText ("[M]", x + 4, 36, 30, 10, juce::Justification::left, false);
             g.setColour (colDimText);
         }
 
@@ -302,8 +314,8 @@ void TrackerComponent::handleHeaderClick (int trackIdx, const juce::Point<int>& 
 {
     auto& track = engine.getTrack (trackIdx);
 
-    // Mute button: y 36..46, x 4..34
-    if (local.y >= 36 && local.y <= 46 && local.x >= 4 && local.x <= 34)
+    // Mute button: top-right corner, y 2..18, x colW-22..colW-4
+    if (local.y >= 2 && local.y <= 18 && local.x >= colW - 22 && local.x <= colW - 4)
     {
         track.muted = !track.muted;
         return;

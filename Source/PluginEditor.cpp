@@ -165,8 +165,7 @@ void LoFiTrackerAudioProcessorEditor::setupToolbar()
 void LoFiTrackerAudioProcessorEditor::showResetConfirmation()
 {
     auto* aw = new juce::AlertWindow ("Reset",
-                                      "Erase all notes and reset all voice settings?\n"
-                                      "(BPM is preserved.)",
+                                      "Erase all notes and reset all voice settings?",
                                       juce::MessageBoxIconType::NoIcon,
                                       this);
     aw->setLookAndFeel (&squareButtonLAF);
@@ -274,11 +273,11 @@ void LoFiTrackerAudioProcessorEditor::resized()
 
     // ---- Master slide ----
     btnMasterSlide.setBounds    (tx, 6, 22, 24);   tx += 26;
-    slMasterSlideLen.setBounds  (tx, 5, 68, 26);   tx += 72;
+    slMasterSlideLen.setBounds  (tx, 5, 136, 26);  tx += 140;
 
     // ---- Master stutter ----
     btnMasterStutter.setBounds      (tx, 6, 26, 24);   tx += 30;
-    slMasterStutterCount.setBounds  (tx, 5, 48, 26);   tx += 52;
+    slMasterStutterCount.setBounds  (tx, 5, 136, 26);  tx += 140;
 
     // ---- Reset — right-aligned with 8px margin ----
     btnReset.setBounds (w - 60, 6, 52, 24);
