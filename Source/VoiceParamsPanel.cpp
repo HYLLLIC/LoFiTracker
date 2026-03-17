@@ -67,11 +67,11 @@ void VoiceParamsPanel::buildSlider (juce::Slider& s, juce::Label& l,
         s.setSkewFactorFromMidPoint (midPoint);
     s.setValue (def, juce::dontSendNotification);
     s.setTextBoxStyle (juce::Slider::TextBoxBelow, false, 40, 14);
-    s.setColour (juce::Slider::trackColourId,         juce::Colour (0xff44cc66).withAlpha (0.6f));
-    s.setColour (juce::Slider::backgroundColourId,    juce::Colour (0xff2a2a2a));
+    s.setColour (juce::Slider::trackColourId,         juce::Colour (0xff4C7030).withAlpha (0.75f));  // olive green
+    s.setColour (juce::Slider::backgroundColourId,    juce::Colour (0xff1a1a18));
     s.setColour (juce::Slider::textBoxTextColourId,   colText);
-    s.setColour (juce::Slider::textBoxBackgroundColourId, juce::Colour (0xff161616));
-    s.setColour (juce::Slider::textBoxOutlineColourId, juce::Colour (0xff333333));
+    s.setColour (juce::Slider::textBoxBackgroundColourId, juce::Colour (0xff141412));
+    s.setColour (juce::Slider::textBoxOutlineColourId, juce::Colour (0xff333330));
     s.addListener (this);
 
     addAndMakeVisible (l);
@@ -144,7 +144,7 @@ void VoiceParamsPanel::sliderValueChanged (juce::Slider*)
 void VoiceParamsPanel::paint (juce::Graphics& g)
 {
     g.fillAll (colBg);
-    g.setColour (juce::Colour (0xff333333));
+    g.setColour (juce::Colour (0xff4C7030).withAlpha (0.4f));  // olive top border
     g.drawRect (getLocalBounds(), 1);
 }
 

@@ -68,20 +68,20 @@ private:
     //-- step-count spinners (simple click zones in header)
     void handleHeaderClick (int trackIdx, const juce::Point<int>& local);
 
-    //-- colour scheme
-    juce::Colour colBg         { 0xff1a1a1a };
-    juce::Colour colHeaderBg   { 0xff222222 };
-    juce::Colour colRowEven    { 0xff1e1e1e };
-    juce::Colour colRowOdd     { 0xff212121 };
-    juce::Colour colRowGroup   { 0xff252525 };  // every 4th row
-    juce::Colour colCursor     { 0xff2a5c3a };  // selected cell
-    juce::Colour colPlayhead   { 0xff3a6f4a };  // current playing step
-    juce::Colour colText       { 0xffcccccc };
-    juce::Colour colDimText    { 0xff555555 };
-    juce::Colour colAccent     { 0xff44cc66 };
-    juce::Colour colMuted      { 0xff884444 };
-    juce::Colour colDivider    { 0xff333333 };
-    juce::Colour colStepNum    { 0xff444444 };
+    //-- colour scheme  (olive / platinum / Mikado yellow retro palette)
+    juce::Colour colBg         { 0xff1a1a18 };  // warm dark grey
+    juce::Colour colHeaderBg   { 0xff222220 };
+    juce::Colour colRowEven    { 0xff1d1d1b };
+    juce::Colour colRowOdd     { 0xff202020 };
+    juce::Colour colRowGroup   { 0xff262620 };  // every 4th row (beat marker)
+    juce::Colour colCursor     { 0xff2a3a18 };  // dark olive — selected cell
+    juce::Colour colPlayhead   { 0xff3d5a24 };  // olive — current playing step
+    juce::Colour colText       { 0xffE8E3E4 };  // platinum
+    juce::Colour colDimText    { 0xff666655 };
+    juce::Colour colAccent     { 0xffFDC618 };  // Mikado yellow
+    juce::Colour colMuted      { 0xff8B5A20 };  // warm amber-brown for muted
+    juce::Colour colDivider    { 0xff333330 };
+    juce::Colour colStepNum    { 0xff4a4a38 };
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (TrackerComponent)
 };

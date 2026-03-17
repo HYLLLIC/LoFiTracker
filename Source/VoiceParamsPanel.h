@@ -49,9 +49,9 @@ private:
 
     bool ignoreCallbacks { false };
 
-    juce::Colour colBg     { 0xff1e1e1e };
-    juce::Colour colText   { 0xffaaaaaa };
-    juce::Colour colAccent { 0xff44cc66 };
+    juce::Colour colBg     { 0xff1a1a18 };  // warm dark grey
+    juce::Colour colText   { 0xffE8E3E4 };  // platinum
+    juce::Colour colAccent { 0xffFDC618 };  // Mikado yellow
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (VoiceParamsPanel)
 };

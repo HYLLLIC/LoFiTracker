@@ -307,9 +307,9 @@ void TrackerComponent::drawNoteEditPopup (juce::Graphics& g)
     const juce::Rectangle<int> popup (px, py, pw, ph);
 
     // Background
-    g.setColour (juce::Colour (0xee1a2a1e));
+    g.setColour (juce::Colour (0xee1e1e18));
     g.fillRoundedRectangle (popup.toFloat(), 4.0f);
-    g.setColour (colAccent.withAlpha (0.8f));
+    g.setColour (juce::Colour (0xff4C7030).withAlpha (0.9f));  // olive border
     g.drawRoundedRectangle (popup.toFloat(), 4.0f, 1.0f);
 
     const juce::Font mono ("Courier New", 12.0f, juce::Font::bold);
@@ -333,9 +333,9 @@ void TrackerComponent::drawNoteEditPopup (juce::Graphics& g)
     const int barW = pw - 16;
     const int barH = 10;
 
-    g.setColour (juce::Colour (0xff2a2a2a));
+    g.setColour (juce::Colour (0xff282822));
     g.fillRoundedRectangle ((float)barX, (float)barY, (float)barW, (float)barH, 3.0f);
-    g.setColour (colAccent.withAlpha (0.7f));
+    g.setColour (juce::Colour (0xff4C7030).withAlpha (0.85f));  // olive velocity fill
     g.fillRoundedRectangle ((float)barX, (float)barY,
                              barW * velFrac, (float)barH, 3.0f);
 

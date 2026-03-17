@@ -42,12 +42,12 @@ void LoFiTrackerAudioProcessorEditor::setupToolbar()
     addAndMakeVisible (lblTitle);
     lblTitle.setText ("LoFiTracker", juce::dontSendNotification);
     lblTitle.setFont (juce::Font ("Courier New", 16.0f, juce::Font::bold));
-    lblTitle.setColour (juce::Label::textColourId, juce::Colour (0xff44cc66));
+    lblTitle.setColour (juce::Label::textColourId, juce::Colour (0xffFDC618));  // Mikado yellow
 
     // Play button
     addAndMakeVisible (btnPlay);
-    btnPlay.setColour (juce::TextButton::buttonColourId,   juce::Colour (0xff2a4a2a));
-    btnPlay.setColour (juce::TextButton::textColourOffId,  juce::Colour (0xff44cc66));
+    btnPlay.setColour (juce::TextButton::buttonColourId,   juce::Colour (0xff1e2a10));  // dark olive bg
+    btnPlay.setColour (juce::TextButton::textColourOffId,  juce::Colour (0xff4C7030));  // olive text
     btnPlay.onClick = [this]
     {
         processor.setInternalPlaying (true);
@@ -56,8 +56,8 @@ void LoFiTrackerAudioProcessorEditor::setupToolbar()
 
     // Stop button
     addAndMakeVisible (btnStop);
-    btnStop.setColour (juce::TextButton::buttonColourId,   juce::Colour (0xff3a2a2a));
-    btnStop.setColour (juce::TextButton::textColourOffId,  juce::Colour (0xffcc4444));
+    btnStop.setColour (juce::TextButton::buttonColourId,   juce::Colour (0xff2a1e0a));  // dark warm bg
+    btnStop.setColour (juce::TextButton::textColourOffId,  juce::Colour (0xff8B5A20));  // amber-brown text
     btnStop.onClick = [this]
     {
         processor.setInternalPlaying (false);
@@ -70,11 +70,11 @@ void LoFiTrackerAudioProcessorEditor::setupToolbar()
     slBpm.setRange (20.0, 300.0, 0.5);
     slBpm.setValue (120.0, juce::dontSendNotification);
     slBpm.setTextBoxStyle (juce::Slider::TextBoxLeft, false, 48, 20);
-    slBpm.setColour (juce::Slider::trackColourId,       juce::Colour (0xff44cc66).withAlpha (0.5f));
-    slBpm.setColour (juce::Slider::backgroundColourId,  juce::Colour (0xff2a2a2a));
-    slBpm.setColour (juce::Slider::textBoxTextColourId, juce::Colour (0xffcccccc));
-    slBpm.setColour (juce::Slider::textBoxBackgroundColourId, juce::Colour (0xff161616));
-    slBpm.setColour (juce::Slider::textBoxOutlineColourId, juce::Colour (0xff333333));
+    slBpm.setColour (juce::Slider::trackColourId,       juce::Colour (0xff4C7030).withAlpha (0.6f));  // olive
+    slBpm.setColour (juce::Slider::backgroundColourId,  juce::Colour (0xff1a1a18));
+    slBpm.setColour (juce::Slider::textBoxTextColourId, juce::Colour (0xffE8E3E4));  // platinum
+    slBpm.setColour (juce::Slider::textBoxBackgroundColourId, juce::Colour (0xff141412));
+    slBpm.setColour (juce::Slider::textBoxOutlineColourId, juce::Colour (0xff333330));
     slBpm.onValueChange = [this]
     {
         processor.setInternalBpm (slBpm.getValue());
@@ -83,7 +83,7 @@ void LoFiTrackerAudioProcessorEditor::setupToolbar()
     addAndMakeVisible (lblBpm);
     lblBpm.setText ("BPM", juce::dontSendNotification);
     lblBpm.setFont (juce::Font ("Courier New", 11.0f, juce::Font::plain));
-    lblBpm.setColour (juce::Label::textColourId, juce::Colour (0xff888888));
+    lblBpm.setColour (juce::Label::textColourId, juce::Colour (0xff666655));  // dim platinum
 }
 
 //==============================================================================
@@ -119,14 +119,14 @@ void LoFiTrackerAudioProcessorEditor::updateParamsPanel()
 //==============================================================================
 void LoFiTrackerAudioProcessorEditor::paint (juce::Graphics& g)
 {
-    g.fillAll (juce::Colour (0xff181818));
+    g.fillAll (juce::Colour (0xff1a1a18));  // warm dark grey
 
     // Toolbar background
-    g.setColour (juce::Colour (0xff202020));
+    g.setColour (juce::Colour (0xff222220));
     g.fillRect (0, 0, getWidth(), kToolbarH);
 
-    // Toolbar bottom line
-    g.setColour (juce::Colour (0xff44cc66).withAlpha (0.3f));
+    // Toolbar bottom line — olive accent
+    g.setColour (juce::Colour (0xff4C7030).withAlpha (0.5f));
     g.drawHorizontalLine (kToolbarH - 1, 0.0f, (float) getWidth());
 }
 
