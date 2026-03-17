@@ -45,6 +45,29 @@ struct SquareButtonLAF : public juce::LookAndFeel_V4
         g.setColour (border);
         g.drawRect (bounds, 1.0f);
     }
+
+    void drawButtonText (juce::Graphics& g,
+                         juce::TextButton& button,
+                         bool isMouseOverButton,
+                         bool isButtonDown) override
+    {
+        juce::Colour col = button.findColour (
+            button.getToggleState() ? juce::TextButton::textColourOnId
+                                    : juce::TextButton::textColourOffId);
+
+        // Brighten text on hover/press for non-toggled state
+        if (!button.getToggleState())
+        {
+            if (isButtonDown)      col = col.brighter (0.55f);
+            else if (isMouseOverButton) col = col.brighter (0.4f);
+        }
+
+        g.setFont (juce::Font ("Courier New", 11.0f, juce::Font::plain));
+        g.setColour (col);
+        g.drawFittedText (button.getButtonText(),
+                          button.getLocalBounds().reduced (2, 0),
+                          juce::Justification::centred, 1);
+    }
 };
 
 //==============================================================================

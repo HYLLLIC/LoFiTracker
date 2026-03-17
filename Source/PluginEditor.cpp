@@ -156,8 +156,8 @@ void LoFiTrackerAudioProcessorEditor::setupToolbar()
     // ---- Reset button ----
     addAndMakeVisible (btnReset);
     btnReset.setLookAndFeel (&squareButtonLAF);
-    btnReset.setColour (juce::TextButton::buttonColourId,  juce::Colour (0xff221010));  // dark red tint
-    btnReset.setColour (juce::TextButton::textColourOffId, juce::Colour (0xff8B3020));  // dim red
+    btnReset.setColour (juce::TextButton::buttonColourId,  juce::Colour (0xff1c1a18));  // near-bg, almost invisible
+    btnReset.setColour (juce::TextButton::textColourOffId, juce::Colour (0xff3a3028));  // very dim warm grey
     btnReset.onClick = [this] { showResetConfirmation(); };
 }
 
@@ -277,7 +277,7 @@ void LoFiTrackerAudioProcessorEditor::resized()
 
     // ---- Master stutter ----
     btnMasterStutter.setBounds      (tx, 6, 26, 24);   tx += 30;
-    slMasterStutterCount.setBounds  (tx, 5, 136, 26);  tx += 140;
+    slMasterStutterCount.setBounds  (tx, 5, 68, 26);   tx += 72;
 
     // ---- Reset — right-aligned with 8px margin ----
     btnReset.setBounds (w - 60, 6, 52, 24);

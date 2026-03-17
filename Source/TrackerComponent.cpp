@@ -411,7 +411,7 @@ void TrackerComponent::drawNoteEditPopup (juce::Graphics& g)
 
     g.setFont (mono10);
     g.setColour (colDimText);
-    g.drawText ("\xe2\x97\x84\xe2\x96\xba semi  \xe2\x86\x91\xe2\x86\x93 oct",
+    g.drawText ("<> semi  ^v oct",
                 px + 52, py + 7, 72, 12,
                 juce::Justification::centredLeft, false);
 
@@ -502,7 +502,7 @@ void TrackerComponent::drawNoteEditPopup (juce::Graphics& g)
         // Hint
         g.setFont (mono10);
         g.setColour (colDimText.withAlpha (0.7f));
-        g.drawText ("\xe2\x86\x95 scroll to adjust",
+        g.drawText ("^v scroll to adjust",
                     px + 80, btnY, pw - 86, btnH, juce::Justification::centredLeft, false);
     }
 
@@ -524,7 +524,7 @@ void TrackerComponent::drawNoteEditPopup (juce::Graphics& g)
     // ---- Row 3: velocity label ----
     g.setFont (mono10);
     g.setColour (colText);
-    g.drawText ("vel " + velToString (step.vel) + "  \xe2\x86\x95 scroll",
+    g.drawText ("vel " + velToString (step.vel) + "  ^v scroll",
                 px + 6, py + 60, pw - 12, 11,
                 juce::Justification::centredLeft, false);
 }
