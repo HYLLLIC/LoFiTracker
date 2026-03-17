@@ -18,7 +18,9 @@ void TrackerEngine::reset()
 {
     for (auto& t : tracks)
         t.curStep = juce::jmax (0, t.stepCount - 1);
-    sampleAccum = 0.0;
+    // Pre-arm so the very first advance() call fires step 0 immediately
+    // rather than waiting one full step duration before the first beat.
+    sampleAccum = samplesPerStep;
 }
 
 void TrackerEngine::setPlaying (bool p)
@@ -28,7 +30,7 @@ void TrackerEngine::setPlaying (bool p)
         // Start one step back so first advance lands on step 0
         for (auto& t : tracks)
             t.curStep = juce::jmax (0, t.stepCount - 1);
-        sampleAccum = 0.0;
+        sampleAccum = samplesPerStep;
     }
     playing.store (p);
 }
