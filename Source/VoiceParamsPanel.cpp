@@ -40,7 +40,7 @@ VoiceParamsPanel::VoiceParamsPanel()
 
     // Lo-fi
     buildSlider (slBitDepth,  lblBitDepth,  "Bits",   1.0, 16.0, 8.0, true);
-    buildSlider (slSrDiv,     lblSrDiv,     "SR÷",    1.0, 8.0,  1.0, true);
+    buildSlider (slSrDiv,     lblSrDiv,     "SR/",    1.0, 8.0,  1.0, true);
     buildSlider (slFilterCut, lblFilterCut, "Filter", 0.0, 1.0,  0.5);
     buildSlider (slVolume,    lblVolume,    "Volume", 0.0, 1.0,  0.8);
 
@@ -61,17 +61,58 @@ void VoiceParamsPanel::buildSlider (juce::Slider& s, juce::Label& l,
                                      bool isInt, double midPoint)
 {
     addAndMakeVisible (s);
-    s.setSliderStyle (juce::Slider::LinearBarVertical);
+    s.setSliderStyle (juce::Slider::RotaryVerticalDrag);
     s.setRange (lo, hi, isInt ? 1.0 : 0.0);
     if (midPoint > 0.0)
         s.setSkewFactorFromMidPoint (midPoint);
     s.setValue (def, juce::dontSendNotification);
-    s.setTextBoxStyle (juce::Slider::TextBoxBelow, false, 40, 14);
-    s.setColour (juce::Slider::trackColourId,         juce::Colour (0xff4C7030).withAlpha (0.75f));  // olive green
-    s.setColour (juce::Slider::backgroundColourId,    juce::Colour (0xff1a1a18));
-    s.setColour (juce::Slider::textBoxTextColourId,   colText);
-    s.setColour (juce::Slider::textBoxBackgroundColourId, juce::Colour (0xff141412));
-    s.setColour (juce::Slider::textBoxOutlineColourId, juce::Colour (0xff333330));
+    // Width is updated in resized() to match the actual dial column width
+    s.setTextBoxStyle (juce::Slider::TextBoxBelow, false, 52, 14);
+
+    // ---- Compact value formatters ----
+    if (isInt)
+    {
+        s.textFromValueFunction = [] (double v) {
+            return juce::String (juce::roundToInt (v));
+        };
+        s.valueFromTextFunction = [] (const juce::String& t) {
+            return t.getDoubleValue();
+        };
+    }
+    else if (midPoint > 0.0)   // time/envelope values — show in ms or s
+    {
+        s.textFromValueFunction = [] (double v) -> juce::String {
+            if (v < 1.0)
+                return juce::String (juce::roundToInt (v * 1000.0)) + "ms";
+            return juce::String (v, 2) + "s";
+        };
+        s.valueFromTextFunction = [] (const juce::String& t) -> double {
+            const auto trimmed = t.trimEnd();
+            if (trimmed.endsWithIgnoreCase ("ms"))
+                return trimmed.dropLastCharacters (2).getDoubleValue() / 1000.0;
+            if (trimmed.endsWithIgnoreCase ("s"))
+                return trimmed.dropLastCharacters (1).getDoubleValue();
+            return trimmed.getDoubleValue();
+        };
+    }
+    else   // ratio, index, filter cutoff, volume — fixed decimal
+    {
+        s.textFromValueFunction = [] (double v) -> juce::String {
+            if (v >= 10.0) return juce::String (v, 1);
+            return juce::String (v, 2);
+        };
+        s.valueFromTextFunction = [] (const juce::String& t) {
+            return t.getDoubleValue();
+        };
+    }
+
+    // ---- Rotary colours ----
+    s.setColour (juce::Slider::rotarySliderFillColourId,    juce::Colour (0xff4C7030));
+    s.setColour (juce::Slider::rotarySliderOutlineColourId, juce::Colour (0xff2a2a28));
+    s.setColour (juce::Slider::thumbColourId,               juce::Colour (0xffFDC618));
+    s.setColour (juce::Slider::textBoxTextColourId,         colText);
+    s.setColour (juce::Slider::textBoxBackgroundColourId,   juce::Colour (0xff141412));
+    s.setColour (juce::Slider::textBoxOutlineColourId,      juce::Colour (0xff1a1a18));
     s.addListener (this);
 
     addAndMakeVisible (l);
@@ -152,10 +193,10 @@ void VoiceParamsPanel::resized()
 {
     const int w       = getWidth();
     const int h       = getHeight();
-    const int lblH    = 14;
+    const int lblH    = 13;
     const int secLblH = 12;
 
-    // 14 sliders + 3 inter-section gaps of kGap px each
+    // 14 dials + inter-section gaps
     const int kGap    = 8;
     const int slW     = juce::jmax (24, (w - 4 - 13 * 2 - 3 * kGap) / 14);
 
@@ -164,8 +205,10 @@ void VoiceParamsPanel::resized()
 
     int x = 2;
 
+    // Update text box width to match actual dial width, then place
     auto place = [&] (juce::Slider& s, juce::Label& l)
     {
+        s.setTextBoxStyle (juce::Slider::TextBoxBelow, false, slW - 2, 14);
         l.setBounds (x, h - lblH, slW, lblH);
         s.setBounds (x, y,        slW, sH);
         x += slW + 2;
@@ -203,8 +246,8 @@ void VoiceParamsPanel::resized()
     btnFilterLP.setBounds (x + 2, y + sH / 2 - 8, 36, 16);
 
     // Section labels — positioned from actual slider start x values
-    const int secW = slW * 2 + 2;   // width for 2-slider sections
-    const int env4W = slW * 4 + 6;  // width for 4-slider sections
+    const int secW = slW * 2 + 2;   // width for 2-dial sections
+    const int env4W = slW * 4 + 6;  // width for 4-dial sections
     lblFMSection.setBounds      (xFM,      2, secW,  secLblH);
     lblCarrierSection.setBounds (xCarrier, 2, env4W, secLblH);
     lblModSection.setBounds     (xMod,     2, env4W, secLblH);
