@@ -111,15 +111,14 @@ void TrackerComponent::paint (juce::Graphics& g)
             // Mute button — top-right corner, same row as voice name
             {
                 const juce::Rectangle<int> muteBtn (x + colW - 22, 2, 18, 16);
-                const juce::Colour muteActive (0xffCC3333);
-                g.setColour (track.muted
-                             ? muteActive.withAlpha (0.25f)
-                             : juce::Colour (0xff1a1a18).withAlpha (0.0f));
+                const juce::Colour muteActive (0xff8B3020);   // dim red, matches Reset
+                const juce::Colour muteBg     (0xff221010);   // dark red tint, matches Reset
+                g.setColour (track.muted ? muteBg : juce::Colour (0x00000000));
                 g.fillRect (muteBtn);
-                g.setColour (track.muted ? muteActive : colDimText.withAlpha (0.45f));
+                g.setColour (track.muted ? muteActive : colDimText.withAlpha (0.35f));
                 g.drawRect (muteBtn, 1);
                 g.setFont (juce::Font ("Courier New", 11.0f, juce::Font::bold));
-                g.setColour (track.muted ? muteActive : colDimText.withAlpha (0.45f));
+                g.setColour (track.muted ? muteActive : colDimText.withAlpha (0.35f));
                 g.drawText ("M", muteBtn, juce::Justification::centred, false);
             }
 
@@ -597,8 +596,13 @@ void TrackerComponent::enterNote (int semitone)
 void TrackerComponent::clearStep()
 {
     auto& step = engine.getTrack (selectedTrack).steps[selectedStep];
-    step.note  = 0;
-    step.vel   = 0;
+    step.note         = 0;
+    step.vel          = 0;
+    step.slide        = false;
+    step.slideLen     = 0.5f;
+    step.stutter      = false;
+    step.stutterCount = 2;
+    noteEditMode = false;
     selectedStep = (selectedStep + 1) % juce::jmax (1, engine.getTrack (selectedTrack).stepCount);
     ensureCursorVisible();
 }
