@@ -8,11 +8,14 @@ void FMVoice::prepare (double sr, int /*blockSize*/)
     sampleRate = sr;
     carrierEnv.setSampleRate (sr);
     modEnv.setSampleRate     (sr);
-    carrierPhase = 0.0;
-    modPhase     = 0.0;
-    filterZ1     = 0.0f;
-    srHoldCount  = 0;
-    srHoldSample = 0.0f;
+    carrierPhase          = 0.0;
+    modPhase              = 0.0;
+    filterZ1              = 0.0f;
+    srHoldCount           = 0;
+    srHoldSample          = 0.0f;
+    slideSamplesRemaining = 0;
+    slideSamplesTotal     = 0;
+    currentModRatio       = 2.0;
 }
 
 //==============================================================================
@@ -32,9 +35,13 @@ void FMVoice::recalcFilter (float normCutoff)
 //==============================================================================
 void FMVoice::noteOn (int midiNote, float velocity, const FMVoiceParams& p)
 {
-    carrierFreq = midiNoteToHz (juce::jlimit (0, 127, midiNote));
-    modFreq     = carrierFreq * (double) p.modRatio;
-    modIndex    = p.modIndex;
+    carrierFreq     = midiNoteToHz (juce::jlimit (0, 127, midiNote));
+    currentModRatio = p.modRatio;
+    modFreq         = carrierFreq * currentModRatio;
+    modIndex        = p.modIndex;
+
+    // Cancel any active portamento glide
+    slideSamplesRemaining = 0;
 
     // Intentionally keep oscillator phases, filter state, and SR-hold state
     // across retriggers so the waveform stays continuous — this eliminates
@@ -74,12 +81,45 @@ void FMVoice::noteOff()
 {
     carrierEnv.noteOff();
     modEnv.noteOff();
+    slideSamplesRemaining = 0;  // cancel any active glide
+}
+
+//==============================================================================
+void FMVoice::glideTo (int targetNote, float velocity, int durationSamples,
+                        const FMVoiceParams& p)
+{
+    const double targetFreq = midiNoteToHz (juce::jlimit (0, 127, targetNote));
+    currentModRatio = p.modRatio;
+
+    if (!isActive() || durationSamples <= 0)
+    {
+        // Voice was idle (or zero-length glide) — fall back to a normal note-on
+        noteOn (targetNote, velocity, p);
+        return;
+    }
+
+    // Voice is active: keep envelope running, just interpolate the pitch
+    slideFromFreq         = carrierFreq;
+    slideToFreq           = targetFreq;
+    slideSamplesTotal     = durationSamples;
+    slideSamplesRemaining = durationSamples;
+
+    // Update synthesis params that may have changed (but don't retrigger envelope)
+    modIndex   = p.modIndex;
+    bitDepth   = juce::jlimit (1.0f, 16.0f, p.bitDepth);
+    srDivisor  = juce::jlimit (1, 8, p.srDivisor);
+    volume     = p.volume;
+    recalcFilter (p.filterCutoff);
+    filterIsLP = p.filterIsLP;
 }
 
 void FMVoice::applyParams (const FMVoiceParams& p)
 {
-    modIndex  = p.modIndex;
-    modFreq   = carrierFreq * (double) p.modRatio;
+    modIndex        = p.modIndex;
+    currentModRatio = p.modRatio;
+    // Don't overwrite modFreq mid-glide — render() updates it per-sample
+    if (slideSamplesRemaining <= 0)
+        modFreq = carrierFreq * currentModRatio;
     bitDepth  = juce::jlimit (1.0f, 16.0f, p.bitDepth);
     srDivisor = juce::jlimit (1, 8, p.srDivisor);
     volume    = p.volume;
@@ -114,16 +154,31 @@ void FMVoice::render (juce::AudioBuffer<float>& buffer, int startSample, int num
     if (!carrierEnv.isActive())
         return;
 
-    const double twoPi        = juce::MathConstants<double>::twoPi;
-    const double carrierDelta = twoPi * carrierFreq / sampleRate;
-    const double modDelta     = twoPi * modFreq     / sampleRate;
+    const double twoPi = juce::MathConstants<double>::twoPi;
 
     auto* L = buffer.getWritePointer (0, startSample);
     auto* R = buffer.getNumChannels() > 1 ? buffer.getWritePointer (1, startSample) : nullptr;
 
     for (int i = 0; i < numSamples; ++i)
     {
-        // Sample-rate reduction
+        // ---- Portamento: interpolate carrier/mod frequencies per-sample ----
+        if (slideSamplesRemaining > 0)
+        {
+            const double t = 1.0 - (double) slideSamplesRemaining / (double) slideSamplesTotal;
+            carrierFreq = slideFromFreq + (slideToFreq - slideFromFreq) * t;
+            modFreq     = carrierFreq * currentModRatio;
+            --slideSamplesRemaining;
+            if (slideSamplesRemaining == 0)
+            {
+                carrierFreq = slideToFreq;              // snap exactly at end
+                modFreq     = slideToFreq * currentModRatio;
+            }
+        }
+
+        const double carrierDelta = twoPi * carrierFreq / sampleRate;
+        const double modDelta     = twoPi * modFreq     / sampleRate;
+
+        // ---- Sample-rate reduction ----
         float outputSample;
         if (srDivisor > 1)
         {

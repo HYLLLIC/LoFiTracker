@@ -106,7 +106,17 @@ void LoFiTrackerAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
         auto& track = engine.getTrack (t);
         auto& voice = voices[t];
 
-        if (track.hasPending.load())
+        if (track.pendingSlide.load())
+        {
+            const int   note    = (int)   track.pendingSlideNote.load();
+            const float vel     = (float) track.pendingSlideVel.load();
+            const int   samples = track.pendingSlideSamples.load();
+            track.pendingSlide.store (false);
+            track.pendingOff.store   (false);  // superseded
+
+            voice.glideTo (note, vel, samples, track.params);
+        }
+        else if (track.hasPending.load())
         {
             const int  note = track.pendingNote.load();
             const auto vel  = track.pendingVel.load();

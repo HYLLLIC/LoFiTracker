@@ -70,6 +70,13 @@ struct TrackerTrack
     std::atomic<bool>    hasPending   { false };
     std::atomic<bool>    pendingOff   { false }; // empty step hit — stop voice
 
+    // Pending slide (portamento/glide) event — audio thread only via processBlock.
+    // Set by fireStep() when step.slide is true; consumed by the processor.
+    std::atomic<bool>    pendingSlide        { false };
+    std::atomic<int8_t>  pendingSlideNote    { 0 };
+    std::atomic<uint8_t> pendingSlideVel     { 0 };
+    std::atomic<int>     pendingSlideSamples { 0 };
+
     // Stutter retrigger state — audio thread only, no atomics needed.
     // Set up by fireStep() when a stutter step fires; advanced by advance().
     bool    stutterActive    { false };

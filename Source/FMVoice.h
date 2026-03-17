@@ -10,9 +10,12 @@ class FMVoice
 public:
     FMVoice();
 
-    void prepare (double sampleRate, int blockSize);
-    void noteOn  (int midiNote, float velocity, const FMVoiceParams& p);
-    void noteOff ();
+    void prepare  (double sampleRate, int blockSize);
+    void noteOn   (int midiNote, float velocity, const FMVoiceParams& p);
+    void noteOff  ();
+    // Portamento: keep the voice playing and bend pitch to targetNote over
+    // durationSamples.  Falls back to a normal noteOn if voice is idle.
+    void glideTo  (int targetNote, float velocity, int durationSamples, const FMVoiceParams& p);
     void applyParams (const FMVoiceParams& p);  // update live params mid-voice
 
     // Render into buffer (adds to existing content)
@@ -46,8 +49,15 @@ private:
     float filterCoeff { 0.0f };
     bool  filterIsLP  { true };
 
-    float volume      { 0.8f };
+    float volume          { 0.8f };
     float currentVelocity { 1.0f };
+
+    // Portamento / glide state (audio thread only)
+    double slideFromFreq        { 0.0 };
+    double slideToFreq          { 0.0 };
+    int    slideSamplesTotal    { 0 };
+    int    slideSamplesRemaining { 0 };
+    double currentModRatio      { 2.0 };  // cached for per-sample modFreq update
 
     void recalcFilter (float normCutoff);
     float processSample (float input);

@@ -62,8 +62,9 @@ void TrackerEngine::resetAll()
         track.stutterActive    = false;
         track.stutterRemaining = 0;
         track.stutterAccum     = 0.0;
-        track.hasPending.store (false);
-        track.pendingOff.store (false);
+        track.hasPending.store    (false);
+        track.pendingOff.store    (false);
+        track.pendingSlide.store  (false);
     }
 
     playing.store (false);
@@ -145,24 +146,40 @@ void TrackerEngine::fireStep (int trackIdx)
 
     if (step.note > 0)
     {
-        track.pendingNote.store (step.note);
-        track.pendingVel.store  (step.vel);
-        track.hasPending.store  (true);
-
-        // Set up intra-step stutter retriggers if active
-        if (step.stutter && step.stutterCount > 1)
+        if (step.slide)
         {
-            track.stutterActive    = true;
-            track.stutterRemaining = step.stutterCount - 1;  // first already fired
-            track.stutterAccum     = 0.0;
-            track.stutterPeriod    = samplesPerStep / step.stutterCount;
-            track.stutterNote      = step.note;
-            track.stutterVel       = step.vel;
+            // Portamento: keep the voice playing, bend pitch to the new note.
+            const int slideSamples = juce::jmax (1,
+                (int)(samplesPerStep * juce::jlimit (0.0f, 1.0f, step.slideLen)));
+            track.pendingSlideNote.store    ((int8_t)  step.note);
+            track.pendingSlideVel.store     ((uint8_t) step.vel);
+            track.pendingSlideSamples.store (slideSamples);
+            track.pendingSlide.store        (true);
+            // Slide steps never stutter
+            track.stutterActive    = false;
+            track.stutterRemaining = 0;
         }
         else
         {
-            track.stutterActive    = false;
-            track.stutterRemaining = 0;
+            track.pendingNote.store (step.note);
+            track.pendingVel.store  (step.vel);
+            track.hasPending.store  (true);
+
+            // Set up intra-step stutter retriggers if active
+            if (step.stutter && step.stutterCount > 1)
+            {
+                track.stutterActive    = true;
+                track.stutterRemaining = step.stutterCount - 1;  // first already fired
+                track.stutterAccum     = 0.0;
+                track.stutterPeriod    = samplesPerStep / step.stutterCount;
+                track.stutterNote      = step.note;
+                track.stutterVel       = step.vel;
+            }
+            else
+            {
+                track.stutterActive    = false;
+                track.stutterRemaining = 0;
+            }
         }
     }
     else
