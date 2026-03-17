@@ -5,6 +5,33 @@
 #include "VoiceParamsPanel.h"
 
 //==============================================================================
+// Square-cornered LookAndFeel for toolbar buttons — flat retro style.
+struct SquareButtonLAF : public juce::LookAndFeel_V4
+{
+    void drawButtonBackground (juce::Graphics& g,
+                               juce::Button& button,
+                               const juce::Colour& backgroundColour,
+                               bool isMouseOverButton,
+                               bool isButtonDown) override
+    {
+        const auto bounds = button.getLocalBounds().toFloat();
+
+        juce::Colour fill = backgroundColour;
+        if (isButtonDown)
+            fill = fill.brighter (0.15f);
+        else if (isMouseOverButton)
+            fill = fill.brighter (0.07f);
+
+        g.setColour (fill);
+        g.fillRect (bounds);
+
+        // Subtle border — one shade lighter than the fill
+        g.setColour (fill.brighter (0.3f));
+        g.drawRect (bounds, 1.0f);
+    }
+};
+
+//==============================================================================
 class LoFiTrackerAudioProcessorEditor  : public juce::AudioProcessorEditor,
                                           public juce::Timer
 {
@@ -21,6 +48,9 @@ public:
 
 private:
     LoFiTrackerAudioProcessor& processor;
+
+    //-- look-and-feel (must outlive the buttons)
+    SquareButtonLAF  squareButtonLAF;
 
     //-- toolbar widgets
     juce::TextButton btnPlay   { "PLAY" };

@@ -1,6 +1,7 @@
 #include "PluginEditor.h"
 #include "MacWindowHelper.h"
 
+
 //==============================================================================
 LoFiTrackerAudioProcessorEditor::LoFiTrackerAudioProcessorEditor (LoFiTrackerAudioProcessor& p)
     : AudioProcessorEditor (&p),
@@ -33,6 +34,8 @@ LoFiTrackerAudioProcessorEditor::LoFiTrackerAudioProcessorEditor (LoFiTrackerAud
 
 LoFiTrackerAudioProcessorEditor::~LoFiTrackerAudioProcessorEditor()
 {
+    btnPlay.setLookAndFeel (nullptr);
+    btnStop.setLookAndFeel (nullptr);
     stopTimer();
 }
 
@@ -47,6 +50,7 @@ void LoFiTrackerAudioProcessorEditor::setupToolbar()
 
     // Play button
     addAndMakeVisible (btnPlay);
+    btnPlay.setLookAndFeel (&squareButtonLAF);
     btnPlay.setColour (juce::TextButton::buttonColourId,   juce::Colour (0xff1e2a10));  // dark olive bg
     btnPlay.setColour (juce::TextButton::textColourOffId,  juce::Colour (0xff4C7030));  // olive text
     btnPlay.onClick = [this]
@@ -57,6 +61,7 @@ void LoFiTrackerAudioProcessorEditor::setupToolbar()
 
     // Stop button
     addAndMakeVisible (btnStop);
+    btnStop.setLookAndFeel (&squareButtonLAF);
     btnStop.setColour (juce::TextButton::buttonColourId,   juce::Colour (0xff2a1e0a));  // dark warm bg
     btnStop.setColour (juce::TextButton::textColourOffId,  juce::Colour (0xff8B5A20));  // amber-brown text
     btnStop.onClick = [this]
