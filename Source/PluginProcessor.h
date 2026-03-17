@@ -46,7 +46,7 @@ public:
     const TrackerEngine& getEngine() const { return engine; }
 
     // Called from UI thread — safe because we use atomics for handoff
-    void setInternalPlaying (bool p) { engine.setPlaying (p); }
+    void setInternalPlaying (bool p);          // defined in .cpp
     void setInternalBpm     (double b) { engine.setBpm (b); }
 
 private:
@@ -56,7 +56,11 @@ private:
     // Scratch buffer for voice rendering
     juce::AudioBuffer<float> scratchBuffer;
 
-    bool lastHostPlaying { false };
+    // userStopped: set when the user explicitly stops via plugin UI while host
+    // is still running; cleared on the next Ableton play rising edge.
+    std::atomic<bool> userStopped { false };
+
+    bool lastRawHostPlaying { false };
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (LoFiTrackerAudioProcessor)
 };

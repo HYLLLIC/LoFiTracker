@@ -23,8 +23,6 @@ LoFiTrackerAudioProcessorEditor::LoFiTrackerAudioProcessorEditor (LoFiTrackerAud
     {
         const bool nowPlaying = !processor.getEngine().isPlaying();
         processor.setInternalPlaying (nowPlaying);
-        if (!nowPlaying)
-            processor.getEngine().reset();
     };
 
     startTimerHz (20);
@@ -63,7 +61,6 @@ void LoFiTrackerAudioProcessorEditor::setupToolbar()
     btnStop.onClick = [this]
     {
         processor.setInternalPlaying (false);
-        processor.getEngine().reset();
         tracker.grabKeyboardFocus();
     };
 
@@ -95,10 +92,7 @@ bool LoFiTrackerAudioProcessorEditor::keyPressed (const juce::KeyPress& key)
     // Catch spacebar at the editor level so it works regardless of focus
     if (key.getKeyCode() == juce::KeyPress::spaceKey)
     {
-        const bool nowPlaying = !processor.getEngine().isPlaying();
-        processor.setInternalPlaying (nowPlaying);
-        if (!nowPlaying)
-            processor.getEngine().reset();
+        processor.setInternalPlaying (!processor.getEngine().isPlaying());
         return true;
     }
     return false;

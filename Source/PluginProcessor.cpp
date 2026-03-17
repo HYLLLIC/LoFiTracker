@@ -32,6 +32,15 @@ bool LoFiTrackerAudioProcessor::isBusesLayoutSupported (const BusesLayout& layou
 #endif
 
 //==============================================================================
+void LoFiTrackerAudioProcessor::setInternalPlaying (bool p)
+{
+    userStopped.store (! p, std::memory_order_relaxed);
+    engine.setPlaying (p);
+    if (! p)
+        engine.reset();
+}
+
+//==============================================================================
 void LoFiTrackerAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
                                                juce::MidiBuffer& /*midiMessages*/)
 {
@@ -53,12 +62,25 @@ void LoFiTrackerAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
         }
     }
 
-    // ---- Detect play → stop transition and release all voices ----
-    const bool isNowPlaying = engine.isPlaying() || hostPlaying;
-    if (lastHostPlaying && !isNowPlaying)
+    // ---- Sync engine to host transport edges ----
+    const bool hostStarted = hostPlaying  && ! lastRawHostPlaying;
+    const bool hostStopped = ! hostPlaying &&   lastRawHostPlaying;
+    lastRawHostPlaying = hostPlaying;
+
+    if (hostStarted)
+    {
+        // Ableton pressed Play: always restart, clear any user-stop latch
+        userStopped.store (false, std::memory_order_relaxed);
+        engine.reset();
+        engine.setPlaying (true);
+    }
+    else if (hostStopped)
+    {
+        // Ableton pressed Stop: silence and park
+        engine.setPlaying (false);
         for (auto& v : voices)
             v.noteOff();
-    lastHostPlaying = isNowPlaying;
+    }
 
     // ---- Advance sequencer ----
     engine.advance (buffer.getNumSamples(), hostPlaying, hostBpm);
