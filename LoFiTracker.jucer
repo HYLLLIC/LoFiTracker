@@ -33,6 +33,10 @@
             file="Source/VoiceParamsPanel.cpp"/>
       <FILE id="vp0002" name="VoiceParamsPanel.h" compile="0" resource="0"
             file="Source/VoiceParamsPanel.h"/>
+      <FILE id="mw0001" name="MacWindowHelper.mm" compile="1" resource="0"
+            file="Source/MacWindowHelper.mm"/>
+      <FILE id="mw0002" name="MacWindowHelper.h" compile="0" resource="0"
+            file="Source/MacWindowHelper.h"/>
     </GROUP>
   </MAINGROUP>
   <MODULES>

@@ -1,15 +1,5 @@
 #include "PluginEditor.h"
-
-//==============================================================================
-// Minimal LookAndFeel override: Courier New title bar font for standalone window
-struct LoFiDocWindowLAF  : public juce::LookAndFeel_V4
-{
-    juce::Font getDocumentWindowTitleFont() override
-    {
-        return juce::Font ("Courier New", 14.0f, juce::Font::bold);
-    }
-};
-static LoFiDocWindowLAF g_docWindowLAF;
+#include "MacWindowHelper.h"
 
 //==============================================================================
 LoFiTrackerAudioProcessorEditor::LoFiTrackerAudioProcessorEditor (LoFiTrackerAudioProcessor& p)
@@ -130,19 +120,15 @@ void LoFiTrackerAudioProcessorEditor::updateParamsPanel()
 //==============================================================================
 void LoFiTrackerAudioProcessorEditor::parentHierarchyChanged()
 {
-    // Only runs in standalone — no DocumentWindow exists inside Ableton/VST3
+    // Only present in standalone — no DocumentWindow inside Ableton/VST3
     if (auto* dw = findParentComponentOfClass<juce::DocumentWindow>())
     {
-        if (dw->isUsingNativeTitleBar())
-        {
-            dw->setUsingNativeTitleBar (false);
-            dw->setLookAndFeel (&g_docWindowLAF);
-            // Platinum title bar, warm-dark text
-            dw->setColour (juce::DocumentWindow::backgroundColourId,
-                           juce::Colour (0xffE8E3E4));
-            dw->setColour (juce::DocumentWindow::textColourId,
-                           juce::Colour (0xff1a1a18));
-        }
+       #if JUCE_MAC
+        // Force Aqua (light) appearance: native traffic-light buttons,
+        // white title bar, black text — regardless of system dark/light mode.
+        if (auto* peer = dw->getPeer())
+            applyLightTitleBar (peer);
+       #endif
     }
 }
 
