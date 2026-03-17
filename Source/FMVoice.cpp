@@ -36,12 +36,10 @@ void FMVoice::noteOn (int midiNote, float velocity, const FMVoiceParams& p)
     modFreq     = carrierFreq * (double) p.modRatio;
     modIndex    = p.modIndex;
 
-    // Reset phases
-    carrierPhase = 0.0;
-    modPhase     = 0.0;
-    filterZ1     = 0.0f;
-    srHoldCount  = 0;
-    srHoldSample = 0.0f;
+    // Intentionally keep oscillator phases, filter state, and SR-hold state
+    // across retriggers so the waveform stays continuous — this eliminates
+    // clicks on stutter retriggers.  When the voice was fully idle the ADSR
+    // envelope is at 0, so the starting phase has no audible effect anyway.
 
     currentVelocity = velocity / 127.0f;
 
