@@ -78,9 +78,14 @@ void LoFiTrackerAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     {
         // Ableton pressed Stop: silence and park
         engine.setPlaying (false);
+    }
+
+    // ---- Detect any engine play→stop transition (covers host AND standalone) ----
+    const bool internalNowPlaying = engine.isPlaying();
+    if (lastInternalPlaying && ! internalNowPlaying)
         for (auto& v : voices)
             v.noteOff();
-    }
+    lastInternalPlaying = internalNowPlaying;
 
     // ---- Advance sequencer ----
     engine.advance (buffer.getNumSamples(), hostPlaying, hostBpm);

@@ -12,9 +12,10 @@ public:
     LoFiTrackerAudioProcessorEditor (LoFiTrackerAudioProcessor& p);
     ~LoFiTrackerAudioProcessorEditor() override;
 
-    void paint      (juce::Graphics& g) override;
-    void resized    () override;
-    bool keyPressed (const juce::KeyPress& key) override;
+    void paint                  (juce::Graphics& g) override;
+    void resized                () override;
+    bool keyPressed             (const juce::KeyPress& key) override;
+    void parentHierarchyChanged () override;  // styles the standalone window frame
 
     void timerCallback() override;  // sync UI ↔ engine state
 

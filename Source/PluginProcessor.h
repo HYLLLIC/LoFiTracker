@@ -60,7 +60,8 @@ private:
     // is still running; cleared on the next Ableton play rising edge.
     std::atomic<bool> userStopped { false };
 
-    bool lastRawHostPlaying { false };
+    bool lastRawHostPlaying  { false };
+    bool lastInternalPlaying { false };  // for standalone stop detection
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (LoFiTrackerAudioProcessor)
 };
