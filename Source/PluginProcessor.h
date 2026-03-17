@@ -49,6 +49,9 @@ public:
     void setInternalPlaying (bool p);          // defined in .cpp
     void setInternalBpm     (double b) { engine.setBpm (b); }
 
+    // Clears all notes and resets all settings except BPM; stops playback.
+    void resetAll();
+
 private:
     TrackerEngine engine;
     FMVoice       voices[kNumTracks];

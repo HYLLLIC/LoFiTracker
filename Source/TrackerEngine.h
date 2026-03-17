@@ -70,6 +70,15 @@ struct TrackerTrack
     std::atomic<bool>    hasPending   { false };
     std::atomic<bool>    pendingOff   { false }; // empty step hit — stop voice
 
+    // Stutter retrigger state — audio thread only, no atomics needed.
+    // Set up by fireStep() when a stutter step fires; advanced by advance().
+    bool    stutterActive    { false };
+    int     stutterRemaining { 0 };      // retriggers still to fire
+    double  stutterAccum     { 0.0 };    // sample accumulator for retrigger timing
+    double  stutterPeriod    { 0.0 };    // samples between retriggers
+    int8_t  stutterNote      { 0 };
+    uint8_t stutterVel       { 0 };
+
     TrackerTrack() = default;
 };
 
@@ -90,6 +99,9 @@ public:
     void   setPlaying  (bool p);
     void   setBpm      (double b);
     double getBpm()    const { return bpm.load(); }
+
+    // Clears all notes and resets every track to defaults; keeps BPM.
+    void resetAll();
 
     // Accessors for UI thread (use with care — non-atomic step data)
     TrackerTrack& getTrack (int idx) { jassert(idx >= 0 && idx < kNumTracks); return tracks[idx]; }

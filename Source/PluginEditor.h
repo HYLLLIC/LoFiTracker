@@ -5,9 +5,22 @@
 #include "VoiceParamsPanel.h"
 
 //==============================================================================
-// Square-cornered LookAndFeel for toolbar buttons — flat retro style.
+// Square-cornered LookAndFeel for toolbar buttons and dialogs — flat retro style.
 struct SquareButtonLAF : public juce::LookAndFeel_V4
 {
+    SquareButtonLAF()
+    {
+        // Defaults for AlertWindow dialog buttons (individual buttons
+        // may override via setColour() which takes priority over LAF defaults).
+        setColour (juce::TextButton::buttonColourId,         juce::Colour (0xff1e2a10));
+        setColour (juce::TextButton::textColourOffId,        juce::Colour (0xff4C7030));
+
+        // AlertWindow background / text
+        setColour (juce::AlertWindow::backgroundColourId,    juce::Colour (0xff1a1a18));
+        setColour (juce::AlertWindow::textColourId,          juce::Colour (0xffE8E3E4));
+        setColour (juce::AlertWindow::outlineColourId,       juce::Colour (0xff4C7030));
+    }
+
     void drawButtonBackground (juce::Graphics& g,
                                juce::Button& button,
                                const juce::Colour& backgroundColour,
@@ -25,8 +38,11 @@ struct SquareButtonLAF : public juce::LookAndFeel_V4
         g.setColour (fill);
         g.fillRect (bounds);
 
-        // Subtle border — one shade lighter than the fill
-        g.setColour (fill.brighter (0.3f));
+        // Border: olive when toggled-on, otherwise auto-shade
+        const juce::Colour border = button.getToggleState()
+                                    ? juce::Colour (0xff4C7030)
+                                    : fill.brighter (0.3f);
+        g.setColour (border);
         g.drawRect (bounds, 1.0f);
     }
 };
@@ -59,6 +75,15 @@ private:
     juce::Label      lblBpm;
     juce::Label      lblTitle;
 
+    //-- master slide / stutter defaults (toolbar)
+    juce::TextButton btnMasterSlide    { "s"  };   // toggle
+    juce::Slider     slMasterSlideLen;              // 0–100 %
+    juce::TextButton btnMasterStutter  { "//" };   // toggle
+    juce::Slider     slMasterStutterCount;          // 1–4
+
+    //-- reset
+    juce::TextButton btnReset          { "RESET" };
+
     //-- main areas
     TrackerComponent tracker;
     VoiceParamsPanel paramsPanel;
@@ -70,7 +95,9 @@ private:
     static constexpr int kTotalH     = 580;
 
     void setupToolbar();
-    void updateParamsPanel();   // push selected track to panel
+    void updateParamsPanel();       // push selected track to panel
+    void showResetConfirmation();   // show "Are you sure?" dialog
+    void doReset();                 // execute the reset
 
     bool lastPlayState { false };
 

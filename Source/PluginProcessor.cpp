@@ -32,6 +32,13 @@ bool LoFiTrackerAudioProcessor::isBusesLayoutSupported (const BusesLayout& layou
 #endif
 
 //==============================================================================
+void LoFiTrackerAudioProcessor::resetAll()
+{
+    engine.resetAll();
+    for (auto& v : voices)
+        v.noteOff();
+}
+
 void LoFiTrackerAudioProcessor::setInternalPlaying (bool p)
 {
     userStopped.store (! p, std::memory_order_relaxed);

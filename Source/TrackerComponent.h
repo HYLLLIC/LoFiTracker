@@ -30,6 +30,13 @@ public:
     int getSelectedTrack() const { return selectedTrack; }
     int getSelectedStep()  const { return selectedStep;  }
 
+    // Master defaults applied to every new note entered via keyboard.
+    // Individual per-step overrides (via the popup) take priority.
+    void setMasterSlide        (bool s)   { masterSlide        = s; }
+    void setMasterSlideLen     (float v)  { masterSlideLen     = juce::jlimit (0.0f, 1.0f, v); }
+    void setMasterStutter      (bool s)   { masterStutter      = s; }
+    void setMasterStutterCount (int n)    { masterStutterCount = juce::jlimit (1, 4, n); }
+
     // Callbacks set by editor
     std::function<void(int trackIdx, int newCount)> onStepCountChanged;
     std::function<void()> onTogglePlay;   // spacebar
@@ -42,6 +49,12 @@ private:
     int  selectedStep  { 0 };
     int  currentOctave { 4 };
     bool noteEditMode  { false };  // popup note-edit overlay active
+
+    // Master defaults for new note entry
+    bool  masterSlide        { false };
+    float masterSlideLen     { 0.5f  };
+    bool  masterStutter      { false };
+    int   masterStutterCount { 2     };
     juce::Rectangle<int> popupRect;  // set during drawNoteEditPopup, used for hit-testing
 
     void drawNoteEditPopup (juce::Graphics& g);

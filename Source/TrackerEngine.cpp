@@ -41,6 +41,35 @@ void TrackerEngine::setBpm (double b)
     recalcSamplesPerStep();
 }
 
+//==============================================================================
+void TrackerEngine::resetAll()
+{
+    for (int i = 0; i < kNumTracks; ++i)
+    {
+        auto& track = tracks[i];
+
+        // Clear all steps
+        for (auto& step : track.steps)
+            step = TrackerStep{};
+
+        // Reset track-level settings (keep voice name)
+        track.params    = FMVoiceParams{};
+        track.stepCount = 16;
+        track.muted     = false;
+        track.curStep   = 0;
+
+        // Cancel any active stutter and pending audio events
+        track.stutterActive    = false;
+        track.stutterRemaining = 0;
+        track.stutterAccum     = 0.0;
+        track.hasPending.store (false);
+        track.pendingOff.store (false);
+    }
+
+    playing.store (false);
+    sampleAccum = 0.0;
+}
+
 void TrackerEngine::recalcSamplesPerStep()
 {
     // One 16th note = (60 / bpm) / 4 seconds
@@ -59,17 +88,41 @@ void TrackerEngine::advance (int numSamples, bool hostIsPlaying, double hostBpm)
 
     recalcSamplesPerStep();
 
+    // ---- Fire stutter retriggers that fall within this buffer ----
+    // These use their own accumulator relative to when the step first fired.
+    for (int t = 0; t < kNumTracks; ++t)
+    {
+        auto& track = tracks[t];
+        if (!track.stutterActive || track.stutterRemaining <= 0)
+            continue;
+
+        track.stutterAccum += numSamples;
+
+        while (track.stutterAccum >= track.stutterPeriod && track.stutterRemaining > 0)
+        {
+            track.stutterAccum -= track.stutterPeriod;
+            --track.stutterRemaining;
+            track.pendingNote.store (track.stutterNote);
+            track.pendingVel.store  (track.stutterVel);
+            track.hasPending.store  (true);
+        }
+    }
+
+    // ---- Advance step boundaries ----
     sampleAccum += numSamples;
 
     while (sampleAccum >= samplesPerStep)
     {
         sampleAccum -= samplesPerStep;
 
-        // Advance each track independently (polymeter)
-        // Advance first, then fire — curStep always shows the sounding step
+        // A new step fires: cancel any remaining stutter from the previous step,
+        // advance each track independently (polymeter), then fire the new step.
         for (int t = 0; t < kNumTracks; ++t)
         {
             auto& track = tracks[t];
+            track.stutterActive    = false;  // stutter is step-local
+            track.stutterRemaining = 0;
+            track.stutterAccum     = 0.0;
             track.curStep = (track.curStep + 1) % juce::jmax (1, track.stepCount);
             fireStep (t);
         }
@@ -92,12 +145,30 @@ void TrackerEngine::fireStep (int trackIdx)
 
     if (step.note > 0)
     {
-        track.pendingNote.store  (step.note);
-        track.pendingVel.store   (step.vel);
-        track.hasPending.store   (true);
+        track.pendingNote.store (step.note);
+        track.pendingVel.store  (step.vel);
+        track.hasPending.store  (true);
+
+        // Set up intra-step stutter retriggers if active
+        if (step.stutter && step.stutterCount > 1)
+        {
+            track.stutterActive    = true;
+            track.stutterRemaining = step.stutterCount - 1;  // first already fired
+            track.stutterAccum     = 0.0;
+            track.stutterPeriod    = samplesPerStep / step.stutterCount;
+            track.stutterNote      = step.note;
+            track.stutterVel       = step.vel;
+        }
+        else
+        {
+            track.stutterActive    = false;
+            track.stutterRemaining = 0;
+        }
     }
     else
     {
+        track.stutterActive    = false;
+        track.stutterRemaining = 0;
         track.pendingOff.store (true);
     }
 }

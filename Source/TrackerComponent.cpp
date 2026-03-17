@@ -568,8 +568,13 @@ void TrackerComponent::enterNote (int semitone)
 {
     const int midiNote = juce::jlimit (1, 127, currentOctave * 12 + semitone + 1);
     auto& step = engine.getTrack (selectedTrack).steps[selectedStep];
-    step.note = (int8_t) midiNote;
-    step.vel  = 100;
+    step.note         = (int8_t) midiNote;
+    step.vel          = 100;
+    // Apply master defaults (individual popup overrides are per-step)
+    step.slide        = masterSlide;
+    step.slideLen     = masterSlideLen;
+    step.stutter      = masterStutter;
+    step.stutterCount = masterStutterCount;
 
     // Advance cursor down
     const int maxStep = engine.getTrack (selectedTrack).stepCount;
