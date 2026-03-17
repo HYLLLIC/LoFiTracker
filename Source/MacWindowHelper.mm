@@ -1,4 +1,6 @@
-#if JUCE_MAC
+// .mm files are compiled only on macOS by Xcode — no #if JUCE_MAC guard needed.
+// JUCE_MAC is defined by JUCE headers, so a top-level #if would evaluate to 0
+// before any includes are processed, silently stripping the entire function body.
 
 #import <Cocoa/Cocoa.h>
 #include "MacWindowHelper.h"
@@ -18,5 +20,3 @@ void applyLightTitleBar (juce::ComponentPeer* peer)
     if (@available (macOS 10.14, *))
         window.appearance = [NSAppearance appearanceNamed: NSAppearanceNameAqua];
 }
-
-#endif
