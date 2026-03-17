@@ -10,10 +10,16 @@ static constexpr int kNumTracks   = 5;
 // A single step in the pattern. note==0 means empty/off.
 struct TrackerStep
 {
-    int8_t  note    = 0;    // 0 = empty, 1..127 = MIDI note
-    uint8_t vel     = 100;  // 0..127
-    uint8_t fx      = 0;    // Effect command (reserved for future use)
-    uint8_t fxVal   = 0;    // Effect value
+    int8_t  note         = 0;      // 0 = empty, 1..127 = MIDI note
+    uint8_t vel          = 100;    // 0..127
+    uint8_t fx           = 0;      // Effect command (reserved for future use)
+    uint8_t fxVal        = 0;      // Effect value
+
+    bool    slide        = false;  // Portamento glide into next note
+    float   slideLen     = 0.5f;   // Slide duration: 0.0..1.0 (fraction of step)
+
+    bool    stutter      = false;  // Retrigger the note within the step
+    int     stutterCount = 2;      // Number of retriggles: 1..4
 };
 
 //==============================================================================

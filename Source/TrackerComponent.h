@@ -42,8 +42,10 @@ private:
     int  selectedStep  { 0 };
     int  currentOctave { 4 };
     bool noteEditMode  { false };  // popup note-edit overlay active
+    juce::Rectangle<int> popupRect;  // set during drawNoteEditPopup, used for hit-testing
 
     void drawNoteEditPopup (juce::Graphics& g);
+    void handlePopupClick  (int relX, int relY);   // click inside popup rect
 
     //-- layout geometry (computed in resized())
     int headerH      { 46 };   // track header height

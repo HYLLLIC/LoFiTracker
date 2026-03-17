@@ -141,10 +141,14 @@ juce::ValueTree TrackerEngine::toValueTree() const
         {
             const auto& step = track.steps[s];
             juce::ValueTree sv ("Step");
-            sv.setProperty ("n", (int)step.note,   nullptr);
-            sv.setProperty ("v", (int)step.vel,    nullptr);
-            sv.setProperty ("f", (int)step.fx,     nullptr);
-            sv.setProperty ("p", (int)step.fxVal,  nullptr);
+            sv.setProperty ("n",   (int)step.note,          nullptr);
+            sv.setProperty ("v",   (int)step.vel,           nullptr);
+            sv.setProperty ("f",   (int)step.fx,            nullptr);
+            sv.setProperty ("p",   (int)step.fxVal,         nullptr);
+            sv.setProperty ("sl",  step.slide ? 1 : 0,      nullptr);
+            sv.setProperty ("sll", step.slideLen,            nullptr);
+            sv.setProperty ("st",  step.stutter ? 1 : 0,    nullptr);
+            sv.setProperty ("stc", step.stutterCount,        nullptr);
             vt.addChild (sv, -1, nullptr);
         }
 
@@ -194,10 +198,14 @@ void TrackerEngine::fromValueTree (const juce::ValueTree& root)
         for (auto stepVT : trackVT)
         {
             if (stepVT.getType().toString() != "Step" || s >= kMaxSteps) continue;
-            track.steps[s].note   = (int8_t)  (int) stepVT.getProperty ("n", 0);
-            track.steps[s].vel    = (uint8_t) (int) stepVT.getProperty ("v", 100);
-            track.steps[s].fx     = (uint8_t) (int) stepVT.getProperty ("f", 0);
-            track.steps[s].fxVal  = (uint8_t) (int) stepVT.getProperty ("p", 0);
+            track.steps[s].note         = (int8_t)  (int) stepVT.getProperty ("n",   0);
+            track.steps[s].vel          = (uint8_t) (int) stepVT.getProperty ("v",   100);
+            track.steps[s].fx           = (uint8_t) (int) stepVT.getProperty ("f",   0);
+            track.steps[s].fxVal        = (uint8_t) (int) stepVT.getProperty ("p",   0);
+            track.steps[s].slide        = (int) stepVT.getProperty ("sl",  0) != 0;
+            track.steps[s].slideLen     = (float) stepVT.getProperty ("sll", 0.5f);
+            track.steps[s].stutter      = (int) stepVT.getProperty ("st",  0) != 0;
+            track.steps[s].stutterCount = juce::jlimit (1, 4, (int) stepVT.getProperty ("stc", 2));
             ++s;
         }
     }

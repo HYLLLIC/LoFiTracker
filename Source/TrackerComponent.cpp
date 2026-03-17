@@ -188,7 +188,26 @@ void TrackerComponent::paint (juce::Graphics& g)
             cellText += " ";
             cellText += hasNote ? velToString (step.vel) : "--";
 
-            g.drawText (cellText, cell.getX() + 22, cell.getY(), cell.getWidth() - 24, cell.getHeight(),
+            // Reserve 32px on the right for slide/stutter indicators
+            g.drawText (cellText, cell.getX() + 22, cell.getY(), cell.getWidth() - 56, cell.getHeight(),
+                        juce::Justification::centredLeft, false);
+
+            // --- Slide "s" and stutter "//" indicators ---
+            g.setFont (juce::Font ("Courier New", 11.0f, juce::Font::bold));
+
+            // Slide  — rightmost 32px: x + colW-32
+            const int flagBaseX = cell.getRight() - 32;
+            g.setColour (step.slide
+                         ? colAccent
+                         : colDimText.withAlpha (0.35f));
+            g.drawText ("s", flagBaseX, cell.getY(), 12, cell.getHeight(),
+                        juce::Justification::centredLeft, false);
+
+            // Stutter — further right: x + colW-18
+            g.setColour (step.stutter
+                         ? colAccent
+                         : colDimText.withAlpha (0.35f));
+            g.drawText ("//", flagBaseX + 14, cell.getY(), 18, cell.getHeight(),
                         juce::Justification::centredLeft, false);
         }
 
@@ -217,6 +236,14 @@ void TrackerComponent::mouseDown (const juce::MouseEvent& e)
     const int clickX = e.x;
     const int clickY = e.y;
 
+    // If the note-edit popup is open, check if the click is inside it first.
+    if (noteEditMode && !popupRect.isEmpty() && popupRect.contains (clickX, clickY))
+    {
+        handlePopupClick (clickX - popupRect.getX(), clickY - popupRect.getY());
+        repaint();
+        return;
+    }
+
     for (int t = 0; t < kNumTracks; ++t)
     {
         const int x = t * colW;
@@ -234,6 +261,33 @@ void TrackerComponent::mouseDown (const juce::MouseEvent& e)
             const int row = (clickY - headerH) / rowH + scrollOffset;
             if (row >= 0 && row < kMaxSteps)
             {
+                const int  localX    = clickX - x;
+                const bool inPattern = (row < engine.getTrack (t).stepCount);
+
+                // Check slide/stutter indicator click zones (right-side flags).
+                // These toggle on click without opening the note-edit popup.
+                if (inPattern)
+                {
+                    auto& flagStep = engine.getTrack (t).steps[row];
+
+                    if (localX >= colW - 18)           // stutter "//" zone
+                    {
+                        selectedStep = row;
+                        noteEditMode = false;
+                        flagStep.stutter = !flagStep.stutter;
+                        repaint();
+                        break;
+                    }
+                    if (localX >= colW - 32)           // slide "s" zone
+                    {
+                        selectedStep = row;
+                        noteEditMode = false;
+                        flagStep.slide = !flagStep.slide;
+                        repaint();
+                        break;
+                    }
+                }
+
                 selectedStep = row;
                 const auto& step = engine.getTrack (t).steps[row];
                 noteEditMode = (step.note > 0);
@@ -273,7 +327,7 @@ void TrackerComponent::handleHeaderClick (int trackIdx, const juce::Point<int>& 
 }
 
 //==============================================================================
-void TrackerComponent::mouseWheelMove (const juce::MouseEvent&,
+void TrackerComponent::mouseWheelMove (const juce::MouseEvent& e,
                                         const juce::MouseWheelDetails& wheel)
 {
     if (!noteEditMode) return;
@@ -281,9 +335,30 @@ void TrackerComponent::mouseWheelMove (const juce::MouseEvent&,
     auto& step = engine.getTrack (selectedTrack).steps[selectedStep];
     if (step.note <= 0) return;
 
-    // Each wheel tick nudges velocity by ±4; shift for fine ±1
-    const int delta = (wheel.deltaY > 0.0f) ? 4 : -4;
-    step.vel = (uint8_t) juce::jlimit (1, 127, (int) step.vel + delta);
+    const int dir = (wheel.deltaY > 0.0f) ? 1 : -1;
+
+    // If the mouse is over the length bar area of the popup (row 0, right side),
+    // scroll the relevant length control; otherwise scroll velocity.
+    if (!popupRect.isEmpty()
+        && e.y >= popupRect.getY() + 5  && e.y < popupRect.getY() + 22
+        && e.x >= popupRect.getX() + 128)
+    {
+        if (step.stutter)
+            step.stutterCount = juce::jlimit (1, 4, step.stutterCount + dir);
+        else if (step.slide)
+            step.slideLen = juce::jlimit (0.0f, 1.0f, step.slideLen + dir * 0.1f);
+    }
+    else if (!popupRect.isEmpty()
+             && e.y >= popupRect.getY() + 22 && e.y < popupRect.getY() + 44)
+    {
+        // Row 1 hover (button row) — no scroll action
+    }
+    else
+    {
+        // Velocity: each tick = ±4; row 2/3 of popup or anywhere else
+        step.vel = (uint8_t) juce::jlimit (1, 127, (int) step.vel + dir * 4);
+    }
+
     repaint();
 }
 
@@ -293,8 +368,8 @@ void TrackerComponent::drawNoteEditPopup (juce::Graphics& g)
     const auto& step = engine.getTrack (selectedTrack).steps[selectedStep];
     if (step.note <= 0) { noteEditMode = false; return; }
 
-    // Popup dimensions
-    constexpr int pw = 148, ph = 54;
+    // Popup dimensions — expanded to fit slide/stutter controls
+    constexpr int pw = 210, ph = 84;
 
     // Anchor near the selected cell, clamped to component bounds
     const juce::Rectangle<int> anchor = cellRect (selectedTrack, selectedStep);
@@ -304,46 +379,180 @@ void TrackerComponent::drawNoteEditPopup (juce::Graphics& g)
     if (py + ph > getHeight()) py = getHeight() - ph - 4;
     py = juce::jmax (headerH + 2, py);
 
-    const juce::Rectangle<int> popup (px, py, pw, ph);
+    popupRect = juce::Rectangle<int> (px, py, pw, ph);
 
     // Background
     g.setColour (juce::Colour (0xee1e1e18));
-    g.fillRoundedRectangle (popup.toFloat(), 4.0f);
+    g.fillRoundedRectangle (popupRect.toFloat(), 4.0f);
     g.setColour (juce::Colour (0xff4C7030).withAlpha (0.9f));  // olive border
-    g.drawRoundedRectangle (popup.toFloat(), 4.0f, 1.0f);
+    g.drawRoundedRectangle (popupRect.toFloat(), 4.0f, 1.0f);
 
-    const juce::Font mono ("Courier New", 12.0f, juce::Font::bold);
-    g.setFont (mono);
+    const juce::Font mono12 ("Courier New", 12.0f, juce::Font::bold);
+    const juce::Font mono10 ("Courier New", 10.0f, juce::Font::plain);
+    const juce::Font mono11 ("Courier New", 11.0f, juce::Font::bold);
 
-    // Row 1: note name + semitone hint
+    // ---- Row 0: note name + navigation hints ----
+    g.setFont (mono12);
     g.setColour (colAccent);
     g.drawText (noteToString (step.note),
-                popup.getX() + 8, popup.getY() + 6, 48, 16,
+                px + 6, py + 5, 44, 16,
                 juce::Justification::centredLeft, false);
+
+    g.setFont (mono10);
     g.setColour (colDimText);
-    g.setFont (juce::Font ("Courier New", 10.0f, juce::Font::plain));
-    g.drawText ("\xe2\x97\x84 \xe2\x96\xba semitone  \xe2\x86\x91\xe2\x86\x93 octave",
-                popup.getX() + 56, popup.getY() + 8, pw - 64, 12,
+    g.drawText ("\xe2\x97\x84\xe2\x96\xba semi  \xe2\x86\x91\xe2\x86\x93 oct",
+                px + 52, py + 7, 72, 12,
                 juce::Justification::centredLeft, false);
 
-    // Row 2: velocity bar + value
-    const float velFrac = step.vel / 127.0f;
-    const int barX = popup.getX() + 8;
-    const int barY = popup.getY() + 28;
-    const int barW = pw - 16;
-    const int barH = 10;
+    // ---- Row 0, top-right: length slider ----
+    // Determines stutter count (1-4) or slide length (0-1) depending on active flag.
+    {
+        const int lblX  = px + 128;
+        const int barX  = lblX + 22;
+        const int barY  = py + 8;
+        const int barW  = 44;
+        const int barH  = 10;
 
-    g.setColour (juce::Colour (0xff282822));
-    g.fillRoundedRectangle ((float)barX, (float)barY, (float)barW, (float)barH, 3.0f);
-    g.setColour (juce::Colour (0xff4C7030).withAlpha (0.85f));  // olive velocity fill
-    g.fillRoundedRectangle ((float)barX, (float)barY,
-                             barW * velFrac, (float)barH, 3.0f);
+        g.setFont (mono10);
+        g.setColour (colDimText);
+        g.drawText ("Len", lblX, barY, 20, barH, juce::Justification::centredLeft, false);
 
+        // Trough
+        g.setColour (juce::Colour (0xff282822));
+        g.fillRoundedRectangle ((float)barX, (float)barY, (float)barW, (float)barH, 2.0f);
+
+        if (step.stutter)
+        {
+            // Segmented bar: 4 equal blocks
+            const int segW = barW / 4;
+            for (int i = 0; i < 4; ++i)
+            {
+                const bool filled = (i < step.stutterCount);
+                g.setColour (filled
+                             ? juce::Colour (0xff4C7030).withAlpha (0.85f)
+                             : juce::Colour (0xff333330));
+                g.fillRect (barX + i * segW + (i > 0 ? 1 : 0), barY,
+                            segW - (i > 0 ? 1 : 0), barH);
+            }
+            // Value label
+            g.setFont (mono10);
+            g.setColour (colText);
+            g.drawText (juce::String (step.stutterCount),
+                        barX + barW + 3, barY, 12, barH, juce::Justification::centredLeft, false);
+        }
+        else if (step.slide)
+        {
+            // Continuous fill
+            g.setColour (juce::Colour (0xff4C7030).withAlpha (0.85f));
+            g.fillRoundedRectangle ((float)barX, (float)barY,
+                                    barW * step.slideLen, (float)barH, 2.0f);
+            // Value as percentage
+            g.setFont (mono10);
+            g.setColour (colText);
+            g.drawText (juce::String (juce::roundToInt (step.slideLen * 100)) + "%",
+                        barX + barW + 3, barY, 20, barH, juce::Justification::centredLeft, false);
+        }
+        else
+        {
+            g.setColour (colDimText.withAlpha (0.3f));
+            g.fillRoundedRectangle ((float)barX, (float)barY, (float)barW, (float)barH, 2.0f);
+        }
+    }
+
+    // ---- Row 1: slide [s] and stutter [//] toggle buttons ----
+    {
+        const int btnY = py + 24;
+        const int btnH = 16;
+
+        // Slide button
+        const juce::Rectangle<int> slideBtn (px + 6, btnY, 28, btnH);
+        g.setColour (step.slide
+                     ? juce::Colour (0xff4C7030).withAlpha (0.7f)
+                     : juce::Colour (0xff282822));
+        g.fillRect (slideBtn);
+        g.setColour (step.slide ? colAccent : colDimText);
+        g.drawRect (slideBtn, 1);
+        g.setFont (mono11);
+        g.setColour (step.slide ? colAccent : colDimText);
+        g.drawText ("s", slideBtn, juce::Justification::centred, false);
+
+        // Stutter button
+        const juce::Rectangle<int> stutterBtn (px + 40, btnY, 34, btnH);
+        g.setColour (step.stutter
+                     ? juce::Colour (0xff4C7030).withAlpha (0.7f)
+                     : juce::Colour (0xff282822));
+        g.fillRect (stutterBtn);
+        g.setColour (step.stutter ? colAccent : colDimText);
+        g.drawRect (stutterBtn, 1);
+        g.setFont (mono11);
+        g.setColour (step.stutter ? colAccent : colDimText);
+        g.drawText ("//", stutterBtn, juce::Justification::centred, false);
+
+        // Hint
+        g.setFont (mono10);
+        g.setColour (colDimText.withAlpha (0.7f));
+        g.drawText ("\xe2\x86\x95 scroll to adjust",
+                    px + 80, btnY, pw - 86, btnH, juce::Justification::centredLeft, false);
+    }
+
+    // ---- Row 2: velocity bar ----
+    {
+        const float velFrac = step.vel / 127.0f;
+        const int barX = px + 6;
+        const int barY = py + 46;
+        const int barW = pw - 12;
+        const int barH = 10;
+
+        g.setColour (juce::Colour (0xff282822));
+        g.fillRoundedRectangle ((float)barX, (float)barY, (float)barW, (float)barH, 3.0f);
+        g.setColour (juce::Colour (0xff4C7030).withAlpha (0.85f));
+        g.fillRoundedRectangle ((float)barX, (float)barY,
+                                 barW * velFrac, (float)barH, 3.0f);
+    }
+
+    // ---- Row 3: velocity label ----
+    g.setFont (mono10);
     g.setColour (colText);
-    g.setFont (juce::Font ("Courier New", 10.0f, juce::Font::plain));
     g.drawText ("vel " + velToString (step.vel) + "  \xe2\x86\x95 scroll",
-                popup.getX() + 8, popup.getY() + 40, pw - 16, 11,
+                px + 6, py + 60, pw - 12, 11,
                 juce::Justification::centredLeft, false);
+}
+
+//==============================================================================
+void TrackerComponent::handlePopupClick (int relX, int relY)
+{
+    auto& step = engine.getTrack (selectedTrack).steps[selectedStep];
+    if (step.note <= 0) return;
+
+    constexpr int pw = 210;
+
+    // Slide toggle button: row 1, x=6..34, y=24..40
+    if (relY >= 24 && relY < 40 && relX >= 6 && relX < 34)
+    {
+        step.slide = !step.slide;
+        return;
+    }
+
+    // Stutter toggle button: row 1, x=40..74, y=24..40
+    if (relY >= 24 && relY < 40 && relX >= 40 && relX < 74)
+    {
+        step.stutter = !step.stutter;
+        return;
+    }
+
+    // Length bar click (top-right: x=150..194, y=6..20) — set value from click position
+    const int lenBarX = 150, lenBarW = 44;
+    if (relY >= 6 && relY < 20 && relX >= lenBarX && relX < lenBarX + lenBarW)
+    {
+        const float frac = juce::jlimit (0.0f, 1.0f,
+                                         (relX - lenBarX) / (float) lenBarW);
+        if (step.stutter)
+            step.stutterCount = juce::jlimit (1, 4, 1 + juce::roundToInt (frac * 3.0f));
+        else if (step.slide)
+            step.slideLen = frac;
+    }
+
+    juce::ignoreUnused (pw);
 }
 
 //==============================================================================
