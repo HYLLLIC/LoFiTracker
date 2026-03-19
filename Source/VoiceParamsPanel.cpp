@@ -52,7 +52,15 @@ VoiceParamsPanel::VoiceParamsPanel()
     btnFilterLP.onClick = [this] { if (currentTrack) currentTrack->params.filterIsLP = btnFilterLP.getToggleState(); };
 }
 
-VoiceParamsPanel::~VoiceParamsPanel() {}
+VoiceParamsPanel::~VoiceParamsPanel()
+{
+    // Clear LAF pointers before dialLAF is destroyed
+    for (auto* s : { &slModRatio, &slModIndex,
+                     &slCAtk, &slCDcy, &slCSus, &slCRel,
+                     &slMAtk, &slMDcy, &slMSus, &slMRel,
+                     &slBitDepth, &slSrDiv, &slFilterCut, &slVolume })
+        s->setLookAndFeel (nullptr);
+}
 
 //==============================================================================
 void VoiceParamsPanel::buildSlider (juce::Slider& s, juce::Label& l,
@@ -68,6 +76,9 @@ void VoiceParamsPanel::buildSlider (juce::Slider& s, juce::Label& l,
     s.setValue (def, juce::dontSendNotification);
     // Width is updated in resized() to match the actual dial column width
     s.setTextBoxStyle (juce::Slider::TextBoxBelow, false, 52, 14);
+
+    // Courier New font for the text box via custom LookAndFeel
+    s.setLookAndFeel (&dialLAF);
 
     // ---- Compact value formatters ----
     if (isInt)
@@ -185,6 +196,18 @@ void VoiceParamsPanel::sliderValueChanged (juce::Slider*)
 void VoiceParamsPanel::paint (juce::Graphics& g)
 {
     g.fillAll (colBg);
+
+    // Draw a subtle box behind each dial + its label
+    const juce::Colour boxFill    (0xff1c1c1a);
+    const juce::Colour boxOutline (0xff333331);
+    for (const auto& b : dialBoxes)
+    {
+        g.setColour (boxFill);
+        g.fillRect (b);
+        g.setColour (boxOutline);
+        g.drawRect (b, 1);
+    }
+
     g.setColour (juce::Colour (0xff4C7030).withAlpha (0.4f));  // olive top border
     g.drawRect (getLocalBounds(), 1);
 }
@@ -205,12 +228,17 @@ void VoiceParamsPanel::resized()
 
     int x = 2;
 
-    // Update text box width to match actual dial width, then place
+    dialBoxes.clearQuick();
+
+    // Update text box width to match actual dial width, place dial + label,
+    // and record the combined bounding box for drawing in paint().
     auto place = [&] (juce::Slider& s, juce::Label& l)
     {
         s.setTextBoxStyle (juce::Slider::TextBoxBelow, false, slW - 2, 14);
-        l.setBounds (x, h - lblH, slW, lblH);
-        s.setBounds (x, y,        slW, sH);
+        l.setBounds (x, h - lblH,     slW, lblH);
+        s.setBounds (x, y,            slW, sH);
+        // Box spans from just below section label to bottom of param label
+        dialBoxes.add (juce::Rectangle<int> (x - 1, y - 2, slW + 2, sH + lblH + 3));
         x += slW + 2;
     };
 

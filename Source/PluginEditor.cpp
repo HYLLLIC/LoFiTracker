@@ -39,6 +39,9 @@ LoFiTrackerAudioProcessorEditor::~LoFiTrackerAudioProcessorEditor()
     btnMasterSlide.setLookAndFeel   (nullptr);
     btnMasterStutter.setLookAndFeel (nullptr);
     btnReset.setLookAndFeel         (nullptr);
+    slBpm.setLookAndFeel            (nullptr);
+    slMasterSlideLen.setLookAndFeel (nullptr);
+    slMasterStutterCount.setLookAndFeel (nullptr);
     stopTimer();
 }
 
@@ -75,6 +78,7 @@ void LoFiTrackerAudioProcessorEditor::setupToolbar()
 
     // BPM slider
     addAndMakeVisible (slBpm);
+    slBpm.setLookAndFeel (&sliderLAF);
     slBpm.setSliderStyle (juce::Slider::LinearHorizontal);
     slBpm.setRange (20.0, 300.0, 0.5);
     slBpm.setValue (120.0, juce::dontSendNotification);
@@ -109,6 +113,7 @@ void LoFiTrackerAudioProcessorEditor::setupToolbar()
 
     // ---- Master slide length (0–100 %) ----
     addAndMakeVisible (slMasterSlideLen);
+    slMasterSlideLen.setLookAndFeel (&sliderLAF);
     slMasterSlideLen.setSliderStyle (juce::Slider::LinearHorizontal);
     slMasterSlideLen.setRange (0.0, 100.0, 1.0);
     slMasterSlideLen.setValue (50.0, juce::dontSendNotification);
@@ -139,6 +144,7 @@ void LoFiTrackerAudioProcessorEditor::setupToolbar()
 
     // ---- Master stutter count (1–4) ----
     addAndMakeVisible (slMasterStutterCount);
+    slMasterStutterCount.setLookAndFeel (&sliderLAF);
     slMasterStutterCount.setSliderStyle (juce::Slider::LinearHorizontal);
     slMasterStutterCount.setRange (1.0, 4.0, 1.0);
     slMasterStutterCount.setValue (2.0, juce::dontSendNotification);
@@ -269,7 +275,7 @@ void LoFiTrackerAudioProcessorEditor::resized()
     btnPlay.setBounds           (tx, 6, 52, 24);   tx += 56;
     btnStop.setBounds           (tx, 6, 52, 24);   tx += 60;
     lblBpm.setBounds            (tx, 8, 32, 20);   tx += 34;
-    slBpm.setBounds             (tx, 5, 120, 26);  tx += 126;
+    slBpm.setBounds             (tx, 5, 136, 26);  tx += 140;
 
     // ---- Master slide ----
     btnMasterSlide.setBounds    (tx, 6, 22, 24);   tx += 26;

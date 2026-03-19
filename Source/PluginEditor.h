@@ -88,8 +88,9 @@ public:
 private:
     LoFiTrackerAudioProcessor& processor;
 
-    //-- look-and-feel (must outlive the buttons)
+    //-- look-and-feel (must outlive the buttons/sliders)
     SquareButtonLAF  squareButtonLAF;
+    DialLAF          sliderLAF;       // Courier New for toolbar slider text boxes
 
     //-- toolbar widgets
     juce::TextButton btnPlay   { "PLAY" };

@@ -3,6 +3,17 @@
 #include "TrackerEngine.h"
 
 //==============================================================================
+// Shared LookAndFeel that forces Courier New on slider text boxes.
+// Apply to sliders via setLookAndFeel() — child text-box Labels inherit it.
+struct DialLAF : public juce::LookAndFeel_V4
+{
+    juce::Font getLabelFont (juce::Label&) override
+    {
+        return juce::Font ("Courier New", 10.0f, juce::Font::plain);
+    }
+};
+
+//==============================================================================
 // Parameter panel shown at the bottom of the editor.
 // Displays and edits the FMVoiceParams for the currently selected track.
 class VoiceParamsPanel  : public juce::Component,
@@ -31,6 +42,9 @@ private:
     void syncToTrack();   // push track params → sliders
     void pushToTrack();   // pull slider values → track params
 
+    // LookAndFeel for Courier New text boxes (must outlive sliders)
+    DialLAF dialLAF;
+
     // FM params sliders
     juce::Slider slModRatio, slModIndex;
     juce::Slider slCAtk, slCDcy, slCSus, slCRel;
@@ -46,6 +60,9 @@ private:
     juce::Label  lblFilterCut, lblVolume;
 
     juce::Label lblFMSection, lblCarrierSection, lblModSection, lblLoFiSection;
+
+    // Bounding boxes for each dial (filled in resized, drawn in paint)
+    juce::Array<juce::Rectangle<int>> dialBoxes;
 
     bool ignoreCallbacks { false };
 

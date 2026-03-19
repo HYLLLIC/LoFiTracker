@@ -122,16 +122,30 @@ void TrackerComponent::paint (juce::Graphics& g)
                 g.drawText ("M", muteBtn, juce::Justification::centred, false);
             }
 
-            // Step count controls: "LEN: [<] 16 [>]"
-            const int btnW = 14;
+            // Step count controls: "LEN [<] 16 [>]"
+            const int btnW = 14, btnH = 13;
             const int midY = 20;
             const juce::String lenStr = juce::String (track.stepCount);
-            g.setColour (colText);
+
             g.setFont (juce::Font ("Courier New", 11.0f, juce::Font::plain));
-            g.drawText ("LEN:",     x + 2, midY, 30, 14, juce::Justification::left, false);
-            g.drawText ("[<]",      x + 33, midY, btnW, 14, juce::Justification::centred, false);
-            g.drawText (lenStr,     x + 48, midY, 20, 14, juce::Justification::centred, false);
-            g.drawText ("[>]",      x + 68, midY, btnW, 14, juce::Justification::centred, false);
+            g.setColour (colText);
+            g.drawText ("LEN:", x + 2, midY, 30, btnH, juce::Justification::left, false);
+
+            // Decrease / increase buttons as proper bordered rectangles
+            const juce::Rectangle<int> decBtn (x + 33, midY, btnW, btnH);
+            const juce::Rectangle<int> incBtn (x + 68, midY, btnW, btnH);
+            g.setColour (colText.withAlpha (0.08f));
+            g.fillRect (decBtn);
+            g.fillRect (incBtn);
+            g.setColour (colDimText.withAlpha (0.55f));
+            g.drawRect (decBtn, 1);
+            g.drawRect (incBtn, 1);
+            g.setColour (colText);
+            g.drawText ("<", decBtn, juce::Justification::centred, false);
+            g.drawText (">", incBtn, juce::Justification::centred, false);
+
+            // Step count number between buttons
+            g.drawText (lenStr, x + 48, midY, 20, btnH, juce::Justification::centred, false);
 
             g.setColour (colDimText);
         }
