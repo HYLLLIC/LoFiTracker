@@ -34,11 +34,9 @@ LoFiTrackerAudioProcessorEditor::LoFiTrackerAudioProcessorEditor (LoFiTrackerAud
 
 LoFiTrackerAudioProcessorEditor::~LoFiTrackerAudioProcessorEditor()
 {
-    btnPlay.setLookAndFeel          (nullptr);
-    btnStop.setLookAndFeel          (nullptr);
-    btnMasterSlide.setLookAndFeel   (nullptr);
-    btnMasterStutter.setLookAndFeel (nullptr);
-    btnReset.setLookAndFeel         (nullptr);
+    btnPlay.setLookAndFeel  (nullptr);
+    btnStop.setLookAndFeel  (nullptr);
+    btnReset.setLookAndFeel (nullptr);
     slBpm.setLookAndFeel            (nullptr);
     slMasterSlideLen.setLookAndFeel (nullptr);
     slMasterStutterCount.setLookAndFeel (nullptr);
@@ -98,18 +96,12 @@ void LoFiTrackerAudioProcessorEditor::setupToolbar()
     lblBpm.setFont (juce::Font ("Courier New", 11.0f, juce::Font::plain));
     lblBpm.setColour (juce::Label::textColourId, juce::Colour (0xff666655));  // dim platinum
 
-    // ---- Master slide toggle [s] ----
-    addAndMakeVisible (btnMasterSlide);
-    btnMasterSlide.setLookAndFeel (&squareButtonLAF);
-    btnMasterSlide.setClickingTogglesState (true);
-    btnMasterSlide.setColour (juce::TextButton::buttonColourId,   juce::Colour (0xff141a0c));
-    btnMasterSlide.setColour (juce::TextButton::buttonOnColourId, juce::Colour (0xff2d4a18));
-    btnMasterSlide.setColour (juce::TextButton::textColourOffId,  juce::Colour (0xff4C7030).withAlpha (0.5f));
-    btnMasterSlide.setColour (juce::TextButton::textColourOnId,   juce::Colour (0xffFDC618));
-    btnMasterSlide.onClick = [this]
-    {
-        tracker.setMasterSlide (btnMasterSlide.getToggleState());
-    };
+    // ---- Master slide label ----
+    addAndMakeVisible (lblMasterSlide);
+    lblMasterSlide.setText ("s", juce::dontSendNotification);
+    lblMasterSlide.setFont (juce::Font ("Courier New", 11.0f, juce::Font::plain));
+    lblMasterSlide.setColour (juce::Label::textColourId, juce::Colour (0xff666655));
+    lblMasterSlide.setJustificationType (juce::Justification::centred);
 
     // ---- Master slide length (0–100 %) ----
     addAndMakeVisible (slMasterSlideLen);
@@ -129,18 +121,12 @@ void LoFiTrackerAudioProcessorEditor::setupToolbar()
         tracker.setMasterSlideLen ((float) slMasterSlideLen.getValue() / 100.0f);
     };
 
-    // ---- Master stutter toggle [//] ----
-    addAndMakeVisible (btnMasterStutter);
-    btnMasterStutter.setLookAndFeel (&squareButtonLAF);
-    btnMasterStutter.setClickingTogglesState (true);
-    btnMasterStutter.setColour (juce::TextButton::buttonColourId,   juce::Colour (0xff141a0c));
-    btnMasterStutter.setColour (juce::TextButton::buttonOnColourId, juce::Colour (0xff2d4a18));
-    btnMasterStutter.setColour (juce::TextButton::textColourOffId,  juce::Colour (0xff4C7030).withAlpha (0.5f));
-    btnMasterStutter.setColour (juce::TextButton::textColourOnId,   juce::Colour (0xffFDC618));
-    btnMasterStutter.onClick = [this]
-    {
-        tracker.setMasterStutter (btnMasterStutter.getToggleState());
-    };
+    // ---- Master stutter label ----
+    addAndMakeVisible (lblMasterStutter);
+    lblMasterStutter.setText ("//", juce::dontSendNotification);
+    lblMasterStutter.setFont (juce::Font ("Courier New", 11.0f, juce::Font::plain));
+    lblMasterStutter.setColour (juce::Label::textColourId, juce::Colour (0xff666655));
+    lblMasterStutter.setJustificationType (juce::Justification::centred);
 
     // ---- Master stutter count (1–4) ----
     addAndMakeVisible (slMasterStutterCount);
@@ -194,10 +180,8 @@ void LoFiTrackerAudioProcessorEditor::doReset()
     processor.resetAll();
 
     // Reset master control UI to defaults
-    btnMasterSlide.setToggleState    (false, juce::dontSendNotification);
-    btnMasterStutter.setToggleState  (false, juce::dontSendNotification);
-    slMasterSlideLen.setValue        (50.0,  juce::dontSendNotification);
-    slMasterStutterCount.setValue    (2.0,   juce::dontSendNotification);
+    slMasterSlideLen.setValue     (50.0, juce::dontSendNotification);
+    slMasterStutterCount.setValue (2.0,  juce::dontSendNotification);
 
     tracker.setMasterSlide        (false);
     tracker.setMasterSlideLen     (0.5f);
@@ -278,11 +262,11 @@ void LoFiTrackerAudioProcessorEditor::resized()
     slBpm.setBounds             (tx, 5, 136, 26);  tx += 140;
 
     // ---- Master slide ----
-    btnMasterSlide.setBounds    (tx, 6, 22, 24);   tx += 26;
+    lblMasterSlide.setBounds    (tx, 8, 20, 20);   tx += 22;
     slMasterSlideLen.setBounds  (tx, 5, 136, 26);  tx += 140;
 
     // ---- Master stutter ----
-    btnMasterStutter.setBounds      (tx, 6, 26, 24);   tx += 30;
+    lblMasterStutter.setBounds      (tx, 8, 24, 20);   tx += 26;
     slMasterStutterCount.setBounds  (tx, 5, 68, 26);   tx += 72;
 
     // ---- Reset — right-aligned with 8px margin ----

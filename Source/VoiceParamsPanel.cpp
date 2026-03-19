@@ -208,8 +208,9 @@ void VoiceParamsPanel::paint (juce::Graphics& g)
         g.drawRect (b, 1);
     }
 
-    g.setColour (juce::Colour (0xff4C7030).withAlpha (0.4f));  // olive top border
-    g.drawRect (getLocalBounds(), 1);
+    // Top separator — matches toolbar bottom line exactly (olive, 0.5f alpha, 1px)
+    g.setColour (juce::Colour (0xff4C7030).withAlpha (0.5f));
+    g.drawHorizontalLine (0, 0.0f, (float) getWidth());
 }
 
 void VoiceParamsPanel::resized()
@@ -226,7 +227,9 @@ void VoiceParamsPanel::resized()
     const int y  = secLblH + 4;
     const int sH = h - y - lblH - 2;
 
-    int x = 2;
+    // Centre the dial block so margins are equal on both sides.
+    const int totalContent = 14 * slW + 13 * 2 + 3 * kGap;
+    int x = (w - totalContent) / 2;
 
     dialBoxes.clearQuick();
 

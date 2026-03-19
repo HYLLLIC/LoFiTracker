@@ -18,8 +18,21 @@ TrackerComponent::TrackerComponent (TrackerEngine& e)
     setWantsKeyboardFocus (true);
     startTimerHz (30);  // 30fps repaint for playhead
 
-    // Load background artwork from embedded binary data
-    bgImage = juce::ImageCache::getFromMemory (BinaryData::bg_jpg, BinaryData::bg_jpgSize);
+    // Load background artwork, then apply a one-time 10% contrast boost.
+    bgImage = juce::ImageCache::getFromMemory (BinaryData::bg_jpg, BinaryData::bg_jpgSize)
+                  .createCopy();   // own copy so pixel writes are safe
+    if (bgImage.isValid())
+    {
+        juce::Image::BitmapData px (bgImage, juce::Image::BitmapData::readWrite);
+        for (int y = 0; y < px.height; ++y)
+            for (int x = 0; x < px.width; ++x)
+            {
+                const auto c = px.getPixelColour (x, y);
+                auto adj = [] (float v) { return juce::jlimit (0.0f, 1.0f, 1.10f * (v - 0.5f) + 0.5f); };
+                px.setPixelColour (x, y, juce::Colour::fromFloatRGBA (
+                    adj (c.getFloatRed()), adj (c.getFloatGreen()), adj (c.getFloatBlue()), 1.0f));
+            }
+    }
 }
 
 TrackerComponent::~TrackerComponent()
@@ -86,19 +99,37 @@ void TrackerComponent::paint (juce::Graphics& g)
 {
     g.fillAll (colBg);
 
-    // Draw artwork as a very low-opacity background behind the cell area only.
-    // Crop 4% off each edge of the source image to remove borders / outer detail.
+    // Draw artwork as a low-opacity background behind the cell area only.
+    // 4% border crop, then centre-crop to match the dest aspect ratio (no squeezing).
     if (bgImage.isValid())
     {
         const auto destRect = getLocalBounds().withTrimmedTop (headerH).toFloat();
         const float crop = 0.04f;
-        const juce::Rectangle<float> srcRect (
+
+        // Inner rect after border crop
+        juce::Rectangle<float> srcRect (
             bgImage.getWidth()  * crop,
             bgImage.getHeight() * crop,
             bgImage.getWidth()  * (1.0f - 2.0f * crop),
             bgImage.getHeight() * (1.0f - 2.0f * crop));
 
-        g.setOpacity (0.20f);
+        // Centre-crop source to match destination aspect ratio
+        const float destAspect = destRect.getWidth() / destRect.getHeight();
+        const float srcAspect  = srcRect.getWidth()  / srcRect.getHeight();
+        if (srcAspect > destAspect)
+        {
+            // Source wider — trim sides
+            const float newW = srcRect.getHeight() * destAspect;
+            srcRect = srcRect.withSizeKeepingCentre (newW, srcRect.getHeight());
+        }
+        else
+        {
+            // Source taller — trim top/bottom
+            const float newH = srcRect.getWidth() / destAspect;
+            srcRect = srcRect.withSizeKeepingCentre (srcRect.getWidth(), newH);
+        }
+
+        g.setOpacity (0.30f);
         g.drawImage (bgImage,
                      destRect.getX(), destRect.getY(), destRect.getWidth(), destRect.getHeight(),
                      (int) srcRect.getX(), (int) srcRect.getY(),
@@ -186,19 +217,20 @@ void TrackerComponent::paint (juce::Graphics& g)
             const bool isPlay    = inPattern && (row == playStep[t]) && engine.isPlaying();
             const bool isCursor  = (t == selectedTrack && row == selectedStep);
 
-            // Background
+            // Background — semi-transparent so the artwork image bleeds through.
+            // Cursor / playhead stay mostly solid; regular rows are more open.
             if (isCursor)
-                g.setColour (colCursor);
+                g.setColour (colCursor.withAlpha (0.82f));
             else if (isPlay)
-                g.setColour (colPlayhead);
+                g.setColour (colPlayhead.withAlpha (0.82f));
             else if (!inPattern)
-                g.setColour (colBg.darker (0.1f));
+                g.setColour (colBg.darker (0.1f).withAlpha (0.68f));
             else if (row % 4 == 0)
-                g.setColour (colRowGroup);
+                g.setColour (colRowGroup.withAlpha (0.68f));
             else if (row % 2 == 0)
-                g.setColour (colRowEven);
+                g.setColour (colRowEven.withAlpha (0.68f));
             else
-                g.setColour (colRowOdd);
+                g.setColour (colRowOdd.withAlpha (0.68f));
 
             g.fillRect (cell);
 
@@ -265,9 +297,12 @@ void TrackerComponent::paint (juce::Graphics& g)
         g.drawVerticalLine (x + colW - 1, 0, (float) getHeight());
     }
 
-    // Outer border
+    // Outer border — top and sides only; bottom edge is the params panel's top line
     g.setColour (colDivider);
-    g.drawRect (getLocalBounds(), 1);
+    const auto ob = getLocalBounds();
+    g.drawHorizontalLine (ob.getY(),         (float) ob.getX(), (float) ob.getRight());
+    g.drawVerticalLine   (ob.getX(),         (float) ob.getY(), (float) ob.getBottom());
+    g.drawVerticalLine   (ob.getRight() - 1, (float) ob.getY(), (float) ob.getBottom());
 
     // Header bottom line
     g.setColour (colAccent.withAlpha (0.4f));

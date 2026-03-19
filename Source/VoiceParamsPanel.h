@@ -11,6 +11,46 @@ struct DialLAF : public juce::LookAndFeel_V4
     {
         return juce::Font ("Courier New", 10.0f, juce::Font::plain);
     }
+
+    void drawRotarySlider (juce::Graphics& g,
+                           int x, int y, int width, int height,
+                           float sliderPos,
+                           float rotaryStartAngle, float rotaryEndAngle,
+                           juce::Slider& slider) override
+    {
+        // Draw the arc/outline using the default V4 implementation first
+        LookAndFeel_V4::drawRotarySlider (g, x, y, width, height, sliderPos,
+                                          rotaryStartAngle, rotaryEndAngle, slider);
+
+        // Replicate JUCE V4's thumb position math exactly, then overdraw
+        // the flat thumb circle with a sphere-like gradient.
+        const auto bounds = juce::Rectangle<int> (x, y, width, height)
+                                .toFloat().reduced (10.0f);
+        const float radius  = juce::jmin (bounds.getWidth(), bounds.getHeight()) / 2.0f;
+        const float lineW   = juce::jmin (8.0f, radius * 0.5f);
+        const float arcR    = radius - lineW * 0.5f;
+        const float toAngle = rotaryStartAngle + sliderPos * (rotaryEndAngle - rotaryStartAngle);
+        const float thumbR  = lineW;   // half of thumbWidth = lineW*2
+
+        const juce::Point<float> tp (
+            bounds.getCentreX() + arcR * std::sin (toAngle),
+            bounds.getCentreY() - arcR * std::cos (toAngle));
+
+        // Sphere gradient: 10% closer to base yellow than previous
+        juce::ColourGradient grad (
+            juce::Colour (0xffFED546),          // subtle warm highlight (-5%)
+            tp.x - thumbR * 0.45f, tp.y - thumbR * 0.55f,
+            juce::Colour (0xffD39C0E),          // subtle amber shadow (-5%)
+            tp.x + thumbR * 0.45f, tp.y + thumbR * 0.55f,
+            false);                              // linear gradient
+        g.setGradientFill (grad);
+        g.fillEllipse (tp.x - thumbR, tp.y - thumbR, thumbR * 2.0f, thumbR * 2.0f);
+
+        // Small specular dot — upper-left, soft white
+        g.setColour (juce::Colours::white.withAlpha (0.19f));
+        g.fillEllipse (tp.x - thumbR * 0.5f, tp.y - thumbR * 0.65f,
+                       thumbR * 0.55f, thumbR * 0.42f);
+    }
 };
 
 //==============================================================================

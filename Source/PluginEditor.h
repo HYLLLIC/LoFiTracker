@@ -100,9 +100,9 @@ private:
     juce::Label      lblTitle;
 
     //-- master slide / stutter defaults (toolbar)
-    juce::TextButton btnMasterSlide    { "s"  };   // toggle
+    juce::Label      lblMasterSlide;
     juce::Slider     slMasterSlideLen;              // 0–100 %
-    juce::TextButton btnMasterStutter  { "//" };   // toggle
+    juce::Label      lblMasterStutter;
     juce::Slider     slMasterStutterCount;          // 1–4
 
     //-- reset
@@ -116,7 +116,7 @@ private:
     static constexpr int kToolbarH   = 36;
     static constexpr int kParamsPanelH = 110;
     static constexpr int kTotalW     = 800;
-    static constexpr int kTotalH     = 580;
+    static constexpr int kTotalH     = 570;  // 570-36-110-46 = 378 = 21*18, zero gap
 
     void setupToolbar();
     void updateParamsPanel();       // push selected track to panel
