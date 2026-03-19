@@ -83,6 +83,9 @@ private:
     //-- step-count spinners (simple click zones in header)
     void handleHeaderClick (int trackIdx, const juce::Point<int>& local);
 
+    //-- background artwork
+    juce::Image bgImage;   // loaded once from BinaryData, drawn at low opacity in paint()
+
     //-- colour scheme  (olive / platinum / Mikado yellow retro palette)
     juce::Colour colBg         { 0xff1a1a18 };  // warm dark grey
     juce::Colour colHeaderBg   { 0xff222220 };

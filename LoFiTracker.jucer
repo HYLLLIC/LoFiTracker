@@ -38,6 +38,10 @@
       <FILE id="mw0002" name="MacWindowHelper.h" compile="0" resource="0"
             file="Source/MacWindowHelper.h"/>
     </GROUP>
+    <GROUP id="{A1B2C3D4-1234-5678-ABCD-EF0123456789}" name="Resources">
+      <FILE id="bg0001" name="bg.jpg" compile="0" resource="1"
+            file="Resources/bg.jpg"/>
+    </GROUP>
   </MAINGROUP>
   <MODULES>
     <MODULE id="juce_audio_basics" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>

@@ -1,4 +1,5 @@
 #include "TrackerComponent.h"
+#include "BinaryData.h"
 
 //==============================================================================
 // Classic tracker note key map (like FastTracker 2)
@@ -16,6 +17,9 @@ TrackerComponent::TrackerComponent (TrackerEngine& e)
 {
     setWantsKeyboardFocus (true);
     startTimerHz (30);  // 30fps repaint for playhead
+
+    // Load background artwork from embedded binary data
+    bgImage = juce::ImageCache::getFromMemory (BinaryData::bg_jpg, BinaryData::bg_jpgSize);
 }
 
 TrackerComponent::~TrackerComponent()
@@ -81,6 +85,26 @@ void TrackerComponent::resized()
 void TrackerComponent::paint (juce::Graphics& g)
 {
     g.fillAll (colBg);
+
+    // Draw artwork as a very low-opacity background behind the cell area only.
+    // Crop 4% off each edge of the source image to remove borders / outer detail.
+    if (bgImage.isValid())
+    {
+        const auto destRect = getLocalBounds().withTrimmedTop (headerH).toFloat();
+        const float crop = 0.04f;
+        const juce::Rectangle<float> srcRect (
+            bgImage.getWidth()  * crop,
+            bgImage.getHeight() * crop,
+            bgImage.getWidth()  * (1.0f - 2.0f * crop),
+            bgImage.getHeight() * (1.0f - 2.0f * crop));
+
+        g.setOpacity (0.06f);
+        g.drawImage (bgImage,
+                     destRect.getX(), destRect.getY(), destRect.getWidth(), destRect.getHeight(),
+                     (int) srcRect.getX(), (int) srcRect.getY(),
+                     (int) srcRect.getWidth(), (int) srcRect.getHeight());
+        g.setOpacity (1.0f);
+    }
 
     const int totalW = getWidth();
 
