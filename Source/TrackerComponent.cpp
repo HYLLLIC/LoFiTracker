@@ -98,7 +98,7 @@ void TrackerComponent::paint (juce::Graphics& g)
             bgImage.getWidth()  * (1.0f - 2.0f * crop),
             bgImage.getHeight() * (1.0f - 2.0f * crop));
 
-        g.setOpacity (0.06f);
+        g.setOpacity (0.20f);
         g.drawImage (bgImage,
                      destRect.getX(), destRect.getY(), destRect.getWidth(), destRect.getHeight(),
                      (int) srcRect.getX(), (int) srcRect.getY(),
