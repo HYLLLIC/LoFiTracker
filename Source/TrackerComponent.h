@@ -87,7 +87,7 @@ private:
     juce::Image bgImage;   // loaded once from BinaryData, drawn at low opacity in paint()
 
     //-- colour scheme  (olive / platinum / Mikado yellow retro palette)
-    juce::Colour colBg         { 0xff1a1a18 };  // warm dark grey
+    juce::Colour colBg         { 0xff1d1d1b };  // warm dark grey
     juce::Colour colHeaderBg   { 0xff222220 };
     juce::Colour colRowEven    { 0xff1d1d1b };
     juce::Colour colRowOdd     { 0xff202020 };

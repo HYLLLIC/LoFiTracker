@@ -51,6 +51,7 @@ void LoFiTrackerAudioProcessorEditor::setupToolbar()
     lblTitle.setText ("LoFiTracker", juce::dontSendNotification);
     lblTitle.setFont (juce::Font ("Courier New", 16.0f, juce::Font::bold));
     lblTitle.setColour (juce::Label::textColourId, juce::Colour (0xffFDC618));  // Mikado yellow
+    lblTitle.setJustificationType (juce::Justification::centred);
 
     // Play button
     addAndMakeVisible (btnPlay);
@@ -82,7 +83,7 @@ void LoFiTrackerAudioProcessorEditor::setupToolbar()
     slBpm.setValue (120.0, juce::dontSendNotification);
     slBpm.setTextBoxStyle (juce::Slider::TextBoxLeft, false, 48, 20);
     slBpm.setColour (juce::Slider::trackColourId,       juce::Colour (0xff4C7030).withAlpha (0.6f));  // olive
-    slBpm.setColour (juce::Slider::backgroundColourId,  juce::Colour (0xff1a1a18));
+    slBpm.setColour (juce::Slider::backgroundColourId,  juce::Colour (0xff1d1d1b));
     slBpm.setColour (juce::Slider::textBoxTextColourId, juce::Colour (0xffE8E3E4));  // platinum
     slBpm.setColour (juce::Slider::textBoxBackgroundColourId, juce::Colour (0xff141412));
     slBpm.setColour (juce::Slider::textBoxOutlineColourId, juce::Colour (0xff333330));
@@ -93,13 +94,13 @@ void LoFiTrackerAudioProcessorEditor::setupToolbar()
 
     addAndMakeVisible (lblBpm);
     lblBpm.setText ("BPM", juce::dontSendNotification);
-    lblBpm.setFont (juce::Font ("Courier New", 11.0f, juce::Font::plain));
+    lblBpm.setFont (juce::Font ("Courier New", 11.0f, juce::Font::bold));
     lblBpm.setColour (juce::Label::textColourId, juce::Colour (0xff666655));  // dim platinum
 
     // ---- Master slide label ----
     addAndMakeVisible (lblMasterSlide);
     lblMasterSlide.setText ("s", juce::dontSendNotification);
-    lblMasterSlide.setFont (juce::Font ("Courier New", 11.0f, juce::Font::plain));
+    lblMasterSlide.setFont (juce::Font ("Courier New", 11.0f, juce::Font::bold));
     lblMasterSlide.setColour (juce::Label::textColourId, juce::Colour (0xff666655));
     lblMasterSlide.setJustificationType (juce::Justification::centred);
 
@@ -112,7 +113,7 @@ void LoFiTrackerAudioProcessorEditor::setupToolbar()
     slMasterSlideLen.setTextBoxStyle (juce::Slider::TextBoxLeft, false, 30, 20);
     slMasterSlideLen.setTextValueSuffix ("%");
     slMasterSlideLen.setColour (juce::Slider::trackColourId,              juce::Colour (0xff4C7030).withAlpha (0.5f));
-    slMasterSlideLen.setColour (juce::Slider::backgroundColourId,         juce::Colour (0xff1a1a18));
+    slMasterSlideLen.setColour (juce::Slider::backgroundColourId,         juce::Colour (0xff1d1d1b));
     slMasterSlideLen.setColour (juce::Slider::textBoxTextColourId,        juce::Colour (0xffE8E3E4));
     slMasterSlideLen.setColour (juce::Slider::textBoxBackgroundColourId,  juce::Colour (0xff141412));
     slMasterSlideLen.setColour (juce::Slider::textBoxOutlineColourId,     juce::Colour (0xff333330));
@@ -124,7 +125,7 @@ void LoFiTrackerAudioProcessorEditor::setupToolbar()
     // ---- Master stutter label ----
     addAndMakeVisible (lblMasterStutter);
     lblMasterStutter.setText ("//", juce::dontSendNotification);
-    lblMasterStutter.setFont (juce::Font ("Courier New", 11.0f, juce::Font::plain));
+    lblMasterStutter.setFont (juce::Font ("Courier New", 11.0f, juce::Font::bold));
     lblMasterStutter.setColour (juce::Label::textColourId, juce::Colour (0xff666655));
     lblMasterStutter.setJustificationType (juce::Justification::centred);
 
@@ -136,7 +137,7 @@ void LoFiTrackerAudioProcessorEditor::setupToolbar()
     slMasterStutterCount.setValue (2.0, juce::dontSendNotification);
     slMasterStutterCount.setTextBoxStyle (juce::Slider::TextBoxLeft, false, 20, 20);
     slMasterStutterCount.setColour (juce::Slider::trackColourId,             juce::Colour (0xff4C7030).withAlpha (0.5f));
-    slMasterStutterCount.setColour (juce::Slider::backgroundColourId,        juce::Colour (0xff1a1a18));
+    slMasterStutterCount.setColour (juce::Slider::backgroundColourId,        juce::Colour (0xff1d1d1b));
     slMasterStutterCount.setColour (juce::Slider::textBoxTextColourId,       juce::Colour (0xffE8E3E4));
     slMasterStutterCount.setColour (juce::Slider::textBoxBackgroundColourId, juce::Colour (0xff141412));
     slMasterStutterCount.setColour (juce::Slider::textBoxOutlineColourId,    juce::Colour (0xff333330));
@@ -237,7 +238,7 @@ void LoFiTrackerAudioProcessorEditor::parentHierarchyChanged()
 //==============================================================================
 void LoFiTrackerAudioProcessorEditor::paint (juce::Graphics& g)
 {
-    g.fillAll (juce::Colour (0xff1a1a18));  // warm dark grey
+    g.fillAll (juce::Colour (0xff1d1d1b));  // warm dark grey
 
     // Toolbar background
     g.setColour (juce::Colour (0xff222220));
@@ -253,9 +254,11 @@ void LoFiTrackerAudioProcessorEditor::resized()
     const int w = getWidth();
     const int h = getHeight();
 
-    // Toolbar row
+    // Toolbar row — title centred between left edge and Play button
     int tx = 8;
-    lblTitle.setBounds          (tx, 6, 140, 24);  tx += 148;
+    const int playX = tx + 148;  // Play button left edge (same as before)
+    lblTitle.setBounds (0, 6, playX, 24);  // spans left edge → Play, centred within
+    tx += 148;
     btnPlay.setBounds           (tx, 6, 52, 24);   tx += 56;
     btnStop.setBounds           (tx, 6, 52, 24);   tx += 60;
     lblBpm.setBounds            (tx, 8, 32, 20);   tx += 34;

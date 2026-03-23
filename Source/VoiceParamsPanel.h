@@ -106,7 +106,7 @@ private:
 
     bool ignoreCallbacks { false };
 
-    juce::Colour colBg     { 0xff1a1a18 };  // warm dark grey
+    juce::Colour colBg     { 0xff1d1d1b };  // warm dark grey
     juce::Colour colText   { 0xffE8E3E4 };  // platinum
     juce::Colour colAccent { 0xffFDC618 };  // Mikado yellow
 

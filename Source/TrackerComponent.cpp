@@ -224,13 +224,13 @@ void TrackerComponent::paint (juce::Graphics& g)
             else if (isPlay)
                 g.setColour (colPlayhead.withAlpha (0.82f));
             else if (!inPattern)
-                g.setColour (colBg.darker (0.1f).withAlpha (0.68f));
+                g.setColour (colBg.darker (0.1f).withAlpha (0.72f));
             else if (row % 4 == 0)
-                g.setColour (colRowGroup.withAlpha (0.68f));
+                g.setColour (colRowGroup.withAlpha (0.72f));
             else if (row % 2 == 0)
-                g.setColour (colRowEven.withAlpha (0.68f));
+                g.setColour (colRowEven.withAlpha (0.72f));
             else
-                g.setColour (colRowOdd.withAlpha (0.68f));
+                g.setColour (colRowOdd.withAlpha (0.72f));
 
             g.fillRect (cell);
 
