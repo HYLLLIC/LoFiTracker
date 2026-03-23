@@ -179,7 +179,7 @@ void TrackerComponent::paint (juce::Graphics& g)
 
             // Step count controls: "LEN [<] 16 [>]"
             const int btnW = 14, btnH = 13;
-            const int midY = 20;
+            const int midY = 25;  // centred between voice-name bottom (18) and yellow line (45)
             const juce::String lenStr = juce::String (track.stepCount);
 
             g.setFont (juce::Font ("Courier New", 11.0f, juce::Font::plain));

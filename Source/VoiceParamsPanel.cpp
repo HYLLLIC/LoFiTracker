@@ -199,7 +199,7 @@ void VoiceParamsPanel::paint (juce::Graphics& g)
 
     // Draw a subtle box behind each dial + its label
     const juce::Colour boxFill    (0xff1f1f1d);
-    const juce::Colour boxOutline (0xff333331);
+    const juce::Colour boxOutline = juce::Colour (0xffFDC618).withAlpha (0.4f);  // matches header yellow line
     for (const auto& b : dialBoxes)
     {
         g.setColour (boxFill);
