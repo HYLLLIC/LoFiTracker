@@ -115,6 +115,9 @@ void LoFiTrackerAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
         auto& track = engine.getTrack (t);
         auto& voice = voices[t];
 
+        // Update any live param changes before rendering
+        voice.applyParams (track.params);
+
         if (track.pendingSlide.load())
         {
             const int   note    = (int)   track.pendingSlideNote.load();
@@ -124,28 +127,37 @@ void LoFiTrackerAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
             track.pendingOff.store   (false);  // superseded
 
             voice.glideTo (note, vel, samples, track.params);
+            voice.render (scratchBuffer, 0, buffer.getNumSamples());
         }
         else if (track.hasPending.load())
         {
-            const int  note = track.pendingNote.load();
-            const auto vel  = track.pendingVel.load();
+            const int  note   = track.pendingNote.load();
+            const auto vel    = track.pendingVel.load();
+            const int  offset = juce::jlimit (0, buffer.getNumSamples() - 1,
+                                              track.pendingSampleOffset);
             track.hasPending.store (false);
             track.pendingOff.store (false);  // superseded by note-on
 
+            // Render pre-note tail (previous voice state up to the step boundary)
+            if (offset > 0)
+                voice.render (scratchBuffer, 0, offset);
+
             voice.noteOff();
             voice.noteOn (note, (float) vel, track.params);
+
+            // Render from the note-on point to end of buffer
+            voice.render (scratchBuffer, offset, buffer.getNumSamples() - offset);
         }
         else if (track.pendingOff.load())
         {
             track.pendingOff.store (false);
             voice.noteOff();
+            voice.render (scratchBuffer, 0, buffer.getNumSamples());
         }
-
-        // Update any live param changes
-        voice.applyParams (track.params);
-
-        // Render into scratch
-        voice.render (scratchBuffer, 0, buffer.getNumSamples());
+        else
+        {
+            voice.render (scratchBuffer, 0, buffer.getNumSamples());
+        }
     }
 
     // ---- Mix scratch into output ----

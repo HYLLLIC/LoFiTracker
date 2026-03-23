@@ -77,6 +77,11 @@ struct TrackerTrack
     std::atomic<uint8_t> pendingSlideVel     { 0 };
     std::atomic<int>     pendingSlideSamples { 0 };
 
+    // Exact sample offset within the current processBlock buffer where this
+    // step's note-on should fire.  Written by advance(), read by processBlock().
+    // Audio-thread only — no atomic needed.
+    int pendingSampleOffset { 0 };
+
     // Stutter retrigger state — audio thread only, no atomics needed.
     // Set up by fireStep() when a stutter step fires; advanced by advance().
     bool    stutterActive    { false };

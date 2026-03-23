@@ -146,23 +146,36 @@ void TrackerEngine::advance (int numSamples, bool hostIsPlaying, double hostBpm)
     }
 
     // ---- Advance step boundaries ----
+    // Record accumulator before adding so we can compute the exact sample
+    // offset within this buffer where each step boundary falls.
+    const double accumBefore = sampleAccum;
     sampleAccum += numSamples;
+
+    // Samples from the start of this buffer until the first step threshold.
+    double samplesUntilStep = samplesPerStep - accumBefore;
 
     while (sampleAccum >= samplesPerStep)
     {
         sampleAccum -= samplesPerStep;
+
+        // Exact sample within this buffer where the step fires (clamped to valid range).
+        const int stepOffset = juce::jlimit (0, numSamples - 1,
+                                             juce::roundToInt (samplesUntilStep));
 
         // A new step fires: cancel any remaining stutter from the previous step,
         // advance each track independently (polymeter), then fire the new step.
         for (int t = 0; t < kNumTracks; ++t)
         {
             auto& track = tracks[t];
-            track.stutterActive    = false;  // stutter is step-local
-            track.stutterRemaining = 0;
-            track.stutterAccum     = 0.0;
+            track.stutterActive       = false;  // stutter is step-local
+            track.stutterRemaining    = 0;
+            track.stutterAccum        = 0.0;
+            track.pendingSampleOffset = stepOffset;
             track.curStep = (track.curStep + 1) % juce::jmax (1, track.stepCount);
             fireStep (t);
         }
+
+        samplesUntilStep += samplesPerStep;  // next step is one period later
 
         // Write display snapshot AFTER all tracks have moved so the UI
         // always sees every column at the same logical step boundary
