@@ -119,11 +119,10 @@ void TrackerEngine::advance (int numSamples, bool hostIsPlaying, double hostBpm)
     if (!playing.load() && !hostIsPlaying)
         return;
 
-    // Sync BPM to host if host is playing
+    // Sync BPM to host if host is playing.
+    // setBpm() calls recalcSamplesPerStep() internally, so no redundant call needed.
     if (hostIsPlaying && hostBpm > 0.0)
         setBpm (hostBpm);
-
-    recalcSamplesPerStep();
 
     // ---- Fire stutter retriggers that fall within this buffer ----
     // These use their own accumulator relative to when the step first fired.

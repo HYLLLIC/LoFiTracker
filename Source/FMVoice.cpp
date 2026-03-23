@@ -16,6 +16,7 @@ void FMVoice::prepare (double sr, int /*blockSize*/)
     slideSamplesRemaining = 0;
     slideSamplesTotal     = 0;
     currentModRatio       = 2.0;
+    bitCrusherLevels      = std::pow (2.0f, bitDepth) - 1.0f;
 }
 
 //==============================================================================
@@ -69,9 +70,10 @@ void FMVoice::noteOn (int midiNote, float velocity, const FMVoiceParams& p)
     modEnv.noteOn();
 
     // Lo-fi settings
-    bitDepth  = juce::jlimit (1.0f, 16.0f, p.bitDepth);
-    srDivisor = juce::jlimit (1, 8, p.srDivisor);
-    volume    = p.volume;
+    bitDepth         = juce::jlimit (1.0f, 16.0f, p.bitDepth);
+    bitCrusherLevels = std::pow (2.0f, bitDepth) - 1.0f;
+    srDivisor        = juce::jlimit (1, 8, p.srDivisor);
+    volume           = p.volume;
 
     recalcFilter (p.filterCutoff);
     filterIsLP = p.filterIsLP;
@@ -129,8 +131,9 @@ void FMVoice::applyParams (const FMVoiceParams& p)
     // Don't overwrite modFreq mid-glide — render() updates it per-sample
     if (slideSamplesRemaining <= 0)
         modFreq = carrierFreq * currentModRatio;
-    bitDepth  = juce::jlimit (1.0f, 16.0f, p.bitDepth);
-    srDivisor = juce::jlimit (1, 8, p.srDivisor);
+    bitDepth         = juce::jlimit (1.0f, 16.0f, p.bitDepth);
+    bitCrusherLevels = std::pow (2.0f, bitDepth) - 1.0f;
+    srDivisor        = juce::jlimit (1, 8, p.srDivisor);
     volume    = p.volume;
     recalcFilter (p.filterCutoff);
     filterIsLP = p.filterIsLP;
@@ -139,22 +142,12 @@ void FMVoice::applyParams (const FMVoiceParams& p)
 //==============================================================================
 float FMVoice::processSample (float input)
 {
-    // Bit crusher
-    const float levels = std::pow (2.0f, bitDepth) - 1.0f;
-    float s = std::round (input * levels) / levels;
+    // Bit crusher — use pre-cached scale so no std::pow per sample
+    float s = std::round (input * bitCrusherLevels) / bitCrusherLevels;
 
-    // 1-pole filter
-    if (filterIsLP)
-        filterZ1 = s * (1.0f - filterCoeff) + filterZ1 * filterCoeff;
-    else
-        filterZ1 = s * (1.0f - filterCoeff) + filterZ1 * filterCoeff;  // HP below
-
-    if (filterIsLP)
-        s = filterZ1;
-    else
-        s = s - filterZ1;   // high-pass = input - lowpass
-
-    return s;
+    // 1-pole filter — compute LP state once, output depends on mode
+    filterZ1 = s * (1.0f - filterCoeff) + filterZ1 * filterCoeff;
+    return filterIsLP ? filterZ1 : (s - filterZ1);   // LP or HP
 }
 
 //==============================================================================

@@ -40,7 +40,8 @@ private:
     juce::ADSR modEnv;
 
     // Lo-fi state
-    float  bitDepth   { 8.0f };
+    float  bitDepth         { 8.0f };
+    float  bitCrusherLevels { 255.0f };  // cached: pow(2, bitDepth) - 1; updated on param change
     int    srDivisor  { 1 };
     float  srHoldSample { 0.0f };
     int    srHoldCount  { 0 };
