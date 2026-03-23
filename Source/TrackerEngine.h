@@ -107,6 +107,11 @@ public:
     void   setBpm      (double b);
     double getBpm()    const { return bpm.load(); }
 
+    // Sync engine phase to host PPQ position (call on host play-start).
+    // Sets sampleAccum so step boundaries align to the host's 16th-note grid,
+    // then starts playing.  Do NOT call setPlaying(true) afterwards.
+    void syncToHostPosition (double ppqPos, double bpmVal, double sr);
+
     // Clears all notes and resets every track to defaults; keeps BPM.
     void resetAll();
 

@@ -76,10 +76,19 @@ void LoFiTrackerAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
 
     if (hostStarted)
     {
-        // Ableton pressed Play: always restart, clear any user-stop latch
+        // Ableton pressed Play: sync engine phase to host PPQ position so
+        // step boundaries align to the host's 16th-note grid exactly.
         userStopped.store (false, std::memory_order_relaxed);
-        engine.reset();
-        engine.setPlaying (true);
+
+        double ppqPos    = 0.0;
+        double bpmAtStart = hostBpm > 0.0 ? hostBpm : 120.0;
+        if (auto* ph = getPlayHead())
+            if (auto pos = ph->getPosition())
+                if (auto ppq = pos->getPpqPosition())
+                    ppqPos = *ppq;
+
+        engine.syncToHostPosition (ppqPos, bpmAtStart, getSampleRate());
+        // syncToHostPosition sets playing = true internally; don't call setPlaying again.
     }
     else if (hostStopped)
     {

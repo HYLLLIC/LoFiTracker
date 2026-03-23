@@ -77,6 +77,42 @@ void TrackerEngine::recalcSamplesPerStep()
     samplesPerStep = (sampleRate * 60.0) / (bpm.load() * 4.0);
 }
 
+void TrackerEngine::syncToHostPosition (double ppqPos, double bpmVal, double sr)
+{
+    sampleRate = sr;
+    bpm.store (juce::jlimit (20.0, 300.0, bpmVal));
+    recalcSamplesPerStep();
+
+    // Convert PPQ position to 16th-note grid position.
+    // 1 sixteenth note = 0.25 quarter notes.
+    const double totalSixteenths = ppqPos / 0.25;
+    const auto   globalStep      = (long long) totalSixteenths;           // complete 16ths elapsed
+    const double fraction        = totalSixteenths - (double) globalStep; // 0.0..1.0 within step
+
+    if (fraction < 0.01)
+    {
+        // Right on (or within 1%) of a step boundary — fire this step immediately.
+        for (auto& t : tracks)
+        {
+            const int sc = juce::jmax (1, t.stepCount);
+            t.curStep = (int) (((globalStep - 1) % sc + sc) % sc);
+        }
+        sampleAccum = samplesPerStep;   // pre-armed: fires on very next advance()
+    }
+    else
+    {
+        // Mid-step: current step already fired; wait out the remaining fraction.
+        for (auto& t : tracks)
+        {
+            const int sc = juce::jmax (1, t.stepCount);
+            t.curStep = (int) ((globalStep % sc + sc) % sc);
+        }
+        sampleAccum = fraction * samplesPerStep;
+    }
+
+    playing.store (true);
+}
+
 //==============================================================================
 void TrackerEngine::advance (int numSamples, bool hostIsPlaying, double hostBpm)
 {
