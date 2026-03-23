@@ -208,8 +208,8 @@ void VoiceParamsPanel::paint (juce::Graphics& g)
         g.drawRect (b, 1);
     }
 
-    // Top separator — matches toolbar bottom line exactly (olive, 0.5f alpha, 1px)
-    g.setColour (juce::Colour (0xff4C7030).withAlpha (0.5f));
+    // Top separator — Mikado yellow, matches header and dial box accent lines
+    g.setColour (juce::Colour (0xffFDC618).withAlpha (0.4f));
     g.drawHorizontalLine (0, 0.0f, (float) getWidth());
 }
 

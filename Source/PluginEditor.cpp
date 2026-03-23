@@ -49,7 +49,7 @@ void LoFiTrackerAudioProcessorEditor::setupToolbar()
     // Title
     addAndMakeVisible (lblTitle);
     lblTitle.setText ("LoFiTracker", juce::dontSendNotification);
-    lblTitle.setFont (juce::Font ("Courier New", 16.0f, juce::Font::bold));
+    lblTitle.setFont (juce::Font ("Courier New", 20.0f, juce::Font::bold | juce::Font::italic));
     lblTitle.setColour (juce::Label::textColourId, juce::Colour (0xffFDC618));  // Mikado yellow
     lblTitle.setJustificationType (juce::Justification::centred);
 
