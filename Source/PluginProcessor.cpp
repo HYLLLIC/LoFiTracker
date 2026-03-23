@@ -115,6 +115,17 @@ void LoFiTrackerAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
         auto& track = engine.getTrack (t);
         auto& voice = voices[t];
 
+        // ---- Mute: kill voice instantly, discard all pending events ----
+        if (track.muted)
+        {
+            track.hasPending.store      (false);
+            track.pendingIsStutter.store(false);
+            track.pendingSlide.store    (false);
+            track.pendingOff.store      (false);
+            voice.silence();   // hard-reset both envelopes — no release tail
+            continue;
+        }
+
         // Update any live param changes before rendering
         voice.applyParams (track.params);
 
@@ -131,18 +142,26 @@ void LoFiTrackerAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
         }
         else if (track.hasPending.load())
         {
-            const int  note   = track.pendingNote.load();
-            const auto vel    = track.pendingVel.load();
-            const int  offset = juce::jlimit (0, buffer.getNumSamples() - 1,
-                                              track.pendingSampleOffset);
-            track.hasPending.store (false);
-            track.pendingOff.store (false);  // superseded by note-on
+            const int  note      = track.pendingNote.load();
+            const auto vel       = track.pendingVel.load();
+            const bool isStutter = track.pendingIsStutter.load();
+            const int  offset    = juce::jlimit (0, buffer.getNumSamples() - 1,
+                                                 track.pendingSampleOffset);
+            track.hasPending.store       (false);
+            track.pendingIsStutter.store (false);
+            track.pendingOff.store       (false);  // superseded by note-on
 
-            // Render pre-note tail (previous voice state up to the step boundary)
+            // Render pre-note tail up to the step/stutter boundary
             if (offset > 0)
                 voice.render (scratchBuffer, 0, offset);
 
-            voice.noteOff();
+            // Stutter retriggles skip noteOff so there's no release transient
+            // between retriggles — the envelope continues smoothly from its
+            // current value. Regular step note-ons do noteOff first to allow
+            // the previous note's release to start cleanly.
+            if (!isStutter)
+                voice.noteOff();
+
             voice.noteOn (note, (float) vel, track.params);
 
             // Render from the note-on point to end of buffer

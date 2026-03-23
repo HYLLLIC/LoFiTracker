@@ -13,6 +13,7 @@ public:
     void prepare  (double sampleRate, int blockSize);
     void noteOn   (int midiNote, float velocity, const FMVoiceParams& p);
     void noteOff  ();
+    void silence  ();   // hard-kill both envelopes immediately (used for mute)
     // Portamento: keep the voice playing and bend pitch to targetNote over
     // durationSamples.  Falls back to a normal noteOn if voice is idle.
     void glideTo  (int targetNote, float velocity, int durationSamples, const FMVoiceParams& p);

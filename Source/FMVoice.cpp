@@ -84,6 +84,15 @@ void FMVoice::noteOff()
     slideSamplesRemaining = 0;  // cancel any active glide
 }
 
+void FMVoice::silence()
+{
+    // Hard-kill both envelopes immediately — no release tail.
+    // Used when a track is muted so audio stops instantly.
+    carrierEnv.reset();
+    modEnv.reset();
+    slideSamplesRemaining = 0;
+}
+
 //==============================================================================
 void FMVoice::glideTo (int targetNote, float velocity, int durationSamples,
                         const FMVoiceParams& p)

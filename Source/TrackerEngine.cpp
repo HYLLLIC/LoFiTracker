@@ -139,9 +139,11 @@ void TrackerEngine::advance (int numSamples, bool hostIsPlaying, double hostBpm)
         {
             track.stutterAccum -= track.stutterPeriod;
             --track.stutterRemaining;
-            track.pendingNote.store (track.stutterNote);
-            track.pendingVel.store  (track.stutterVel);
-            track.hasPending.store  (true);
+            track.pendingNote.store      (track.stutterNote);
+            track.pendingVel.store       (track.stutterVel);
+            track.pendingIsStutter.store (true);   // skip noteOff to avoid click
+            track.pendingSampleOffset    = 0;       // fires at start of current buffer
+            track.hasPending.store       (true);
         }
     }
 
@@ -210,9 +212,10 @@ void TrackerEngine::fireStep (int trackIdx)
         }
         else
         {
-            track.pendingNote.store (step.note);
-            track.pendingVel.store  (step.vel);
-            track.hasPending.store  (true);
+            track.pendingNote.store       (step.note);
+            track.pendingVel.store        (step.vel);
+            track.pendingIsStutter.store  (false);  // main step, do full noteOff+noteOn
+            track.hasPending.store        (true);
 
             // Set up intra-step stutter retriggers if active
             if (step.stutter && step.stutterCount > 1)
