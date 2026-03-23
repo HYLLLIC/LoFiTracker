@@ -16,7 +16,7 @@ struct SquareButtonLAF : public juce::LookAndFeel_V4
         setColour (juce::TextButton::textColourOffId,        juce::Colour (0xff4C7030));
 
         // AlertWindow background / text
-        setColour (juce::AlertWindow::backgroundColourId,    juce::Colour (0xff1d1d1b));
+        setColour (juce::AlertWindow::backgroundColourId,    juce::Colour (0xff1b1b19));
         setColour (juce::AlertWindow::textColourId,          juce::Colour (0xffE8E3E4));
         setColour (juce::AlertWindow::outlineColourId,       juce::Colour (0xff4C7030));
     }

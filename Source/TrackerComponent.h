@@ -87,9 +87,9 @@ private:
     juce::Image bgImage;   // loaded once from BinaryData, drawn at low opacity in paint()
 
     //-- colour scheme  (olive / platinum / Mikado yellow retro palette)
-    juce::Colour colBg         { 0xff1d1d1b };  // warm dark grey
+    juce::Colour colBg         { 0xff1b1b19 };  // warm dark grey
     juce::Colour colHeaderBg   { 0xff222220 };
-    juce::Colour colRowEven    { 0xff1d1d1b };
+    juce::Colour colRowEven    { 0xff1b1b19 };
     juce::Colour colRowOdd     { 0xff202020 };
     juce::Colour colRowGroup   { 0xff262620 };  // every 4th row (beat marker)
     juce::Colour colCursor     { 0xff2a3a18 };  // dark olive — selected cell
@@ -98,8 +98,8 @@ private:
     juce::Colour colDimText    { 0xff666655 };
     juce::Colour colAccent     { 0xffFDC618 };  // Mikado yellow
     juce::Colour colMuted      { 0xff8B5A20 };  // warm amber-brown for muted
-    juce::Colour colDivider    { 0xff333330 };
-    juce::Colour colStepNum    { 0xff4a4a38 };
+    juce::Colour colDivider    { 0xff484845 };
+    juce::Colour colStepNum    { 0xff606050 };
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (TrackerComponent)
 };
